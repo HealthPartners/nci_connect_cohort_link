@@ -129,7 +129,7 @@
         },
         {
             "key": "adhoctriggerform-list",
-            "name": "Click the '+' button to add more email address for batch job error notification",
+            "name": "Click the '+' button to adhoc trigger form list",
             "type": "sub_settings",
             "repeatable": true,
             "sub_settings": [
