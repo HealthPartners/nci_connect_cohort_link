@@ -74,7 +74,7 @@ class NCIConnectTokenAndPinGenService
             if (!isset ($this->fields_send_with_token_request)) {
                 $this->fields_send_with_token_request = array();
             }
-             ;
+            
             if (isset($this->inputstudyid) && $this->inputstudyid == REDCap::getRecordIdField() ) {
                 array_push($this->fields_send_with_token_request, $this->inputstudyid);
             } else {
@@ -111,7 +111,7 @@ class NCIConnectTokenAndPinGenService
 
 
 
-     /** This function helps to initiaize all the variable which are necessary to enable module functionality */
+     /** This function helps to initiaize all the variable which are necessary to enable service functionality */
      private function iniGenerator()
      {
          //REDCap::logEvent(self::NCI_MODULE_LOG_NAME, "Module Init");
@@ -125,8 +125,8 @@ class NCIConnectTokenAndPinGenService
              $this->nci_connect_api_endpoint = $this->module->getProjectSetting("prod-api-server-get-participant-token-url");
          }
 
-         if (!empty($this->module->getProjectSetting("studyid-for-token-pin-gen"))) {
-             $this->inputstudyid = $this->module->getProjectSetting("studyid-for-token-pin-gen");
+         if (!empty($this->module->getProjectSetting("studyid-field-batch-process"))) {
+             $this->inputstudyid = $this->module->getProjectSetting("studyid-field-batch-process");
          }
          if (!empty($this->module->getProjectSetting("nci-token-store-field"))) {
              $this->outputtoken = $this->module->getProjectSetting("nci-token-store-field");

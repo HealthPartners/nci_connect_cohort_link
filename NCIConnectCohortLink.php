@@ -1,21 +1,24 @@
 <?php
 // Set the namespace defined in your config file
 namespace HealthPartners\Institute\NCIConnectCohortLink;
-//Import Service for Token and PIN Generator
+//Import Service 
 require_once("NCIConnectTokenAndPinGenService.php");
+require_once("IHCSSendDeIdentifiedDataToNCIService.php");
 
 use HealthPartners\Institute\NCIConnectCohortLink\Service\NCIConnectTokenAndPinGenService as  NCIConnectTokenAndPinGenService;
-
+use HealthPartners\Institute\NCIConnectCohortLink\Service\IHCSSendDeIdentifiedDataToNCIService as  IHCSSendDeIdentifiedDataToNCIService;
 use Exception;
 use REDCap;
 
 // NCIConnectTokenAndPinGenerator module class, which must extend AbstractExternalModule 
 class NCIConnectCohortLink extends \ExternalModules\AbstractExternalModule {
      private $nciTokenAndPINGenService;
+     private $sendDeIdentifiedDataToNCIService;
 
      public function __construct(){
          parent::__construct();
          $this->nciTokenAndPINGenService = new NCIConnectTokenAndPinGenService($this);
+         $this->sendDeIdentifiedDataToNCIService = new IHCSSendDeIdentifiedDataToNCIService($this);
      }
 
      // This function helps to force stop the current running job after the current running batch 
@@ -70,6 +73,12 @@ class NCIConnectCohortLink extends \ExternalModules\AbstractExternalModule {
     }
 
 
+    /**
+     * This method will initiate the send de-identified data to NCI batch process
+     */
+    function startSendDeIdentifyDataToNCIBatchJob() {
+       return $this->sendDeIdentifiedDataToNCIService->startNewBatchJob();
+    }
 
 }
  

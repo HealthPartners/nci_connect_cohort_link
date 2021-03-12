@@ -7,12 +7,12 @@ NCIConnectTokenAndPinGenerator.doBatchCommand = function (actionname) {
             timeout : 5000,
             success: function (returnData) {
                 //Refresh the current page to display batch status
-                window.location.reload();
+                //window.location.reload();
             },
             error: function(request, status, err) {
                 if (status == "timeout") {
                     //Refresh the current page (batch job may already submitted)
-                    window.location.reload();
+                    //window.location.reload();
                 } else {
                     // another error occured  
                     console.log("error: " + request + status + err);

@@ -75,6 +75,18 @@
             "super-users-only": true
         },
         {
+            "key": "dev-api-server-submit-participant-data-url",
+            "name": "DEV-NCIConnect server - submitParticipantsData API service endpoint",
+            "type": "text",
+            "required": true,
+            "branchingLogic": {
+                "field": "nciconnect-env",
+                "value": 1
+            },
+            "super-users-only": true
+        },
+
+        {
             "key": "prod-nciapikey",
             "name": "PROD-NCIAPIKEY",
             "type": "text",
@@ -97,7 +109,18 @@
             "super-users-only": true
         },
         {
-            "key": "studyid-for-token-pin-gen",
+            "key": "prod-api-server-submit-participant-data-url",
+            "name": "PROD-NCIConnect server - submitParticipantsData API service endpoint",
+            "type": "text",
+            "required": true,
+            "branchingLogic": {
+                "field": "nciconnect-env",
+                "value": 2
+            },
+            "super-users-only": true
+        },
+        {
+            "key": "studyid-field-batch-process",
             "name": "The studyId field for generating token and pin",
             "type": "field-list",
             "required": true
@@ -170,12 +193,28 @@
             ]
         },
         {
+            "key": "deidentified-data-send-record-filter-logic",
+            "name": "Send De-identified Data To NCI : Enter the record filter logic (similiar to report advanced filter logic) which used to select eligible studyids",
+            "type": "textarea",
+            "required": true,
+            "super-users-only": true
+        },
+        {
+            "key": "deidentified-data-send-field-list",
+            "name": "Send De-identified Data To NCI : Enter comma seperated list of fields names to send (format : redcap_var_name=CONCEPTID,redcap_var_name=CONCEPTID)",
+            "type": "textarea",
+            "required": true,
+            "super-users-only": true
+        },
+        {
             "key": "apimanager-rest-call-secret-key",
             "name": "Enter the secret key for invoke REST call request on this module functionality",
             "type": "text",
             "required": true,
             "super-users-only": true
         }
+
+
     ],
     "compatibility": {
 		"php-version-min": "5.5.0",

@@ -13,7 +13,7 @@ if ($is_batch_locked===true) {
 ?>
 <div class="card" style="background-color: #F0F0F0!important;">
   <div class="card-header">
-  <span style="color:#000000;font-size:18px"> NCI Token/PIN Generator - Batch Job Manager </span>
+  <span style="color:#000000;font-size:18px"> NCI Batch Job Manager - Token/PIN Generator</span>
      <div class=" float-right">
         
         <button class="btn btn-sm btn-link mr-3" <?php if ($is_batch_locked===false){?>disabled<?php } ?>   onclick="window.location.reload()">Get Status Update</button>
