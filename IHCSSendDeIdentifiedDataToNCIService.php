@@ -20,6 +20,7 @@ class IHCSSendDeIdentifiedDataToNCIService
     private $fields_send_with_token_request; // to hold list of field(s) send part of API request - array.
     private $ncitoken;
     private $deidentified_data_send_field_list; // to hold list of field(s) from EM config
+    private $deidentified_data_sent_status;
     //To track Batch progress
     private $curr_batch;
     private $total_num_batch;
@@ -45,6 +46,9 @@ class IHCSSendDeIdentifiedDataToNCIService
         $this->iniGenerator();
         $redcap_conceptid_list = array();
         $redcap_conceptid_map = array();
+        $recordStudyIdTokenMapArray = array();
+        $redcap_data = array();
+        $data = array() ; // used to send through API
         $this->module->log("Send Deidentified batch job started", ['batch_job_id' => $this->batch_job_id]);
 
         //get all the list of data items from REDCap
@@ -69,9 +73,34 @@ class IHCSSendDeIdentifiedDataToNCIService
         array_push($this->fields_send_with_token_request, $this->ncitoken);
         
 
-        $data = REDCap::getData($this->module->getProjectId() , 'array', NULL, $this->fields_send_with_token_request, NULL, NULL, false, false, false, $this->record_filter_logic, false, false);
+        $redcap_data_with_record_id = REDCap::getData($this->module->getProjectId() , 'array', NULL, $this->fields_send_with_token_request, NULL, NULL, false, false, false, $this->record_filter_logic, false, false);
 
-        return $this->batch_job_id;
+        //Prepare the data with concept id
+        foreach ($redcap_data_with_record_id as $key => $event) {
+            $tempArray= array();
+            foreach ($event as $eventid => $dataitems) {
+                foreach ($dataitems as $field => $val){
+                    if (array_key_exists($field,$redcap_conceptid_map)) {// to find out match concept id variable
+                        $tempArray [$redcap_conceptid_map[$field]] = $val;
+                    } else {
+                        //$data [$field] = $val;
+                    }
+                }
+                // recordStudyIdTokenMapArray will used to write data back to REDCap record
+                $recordStudyIdTokenMapArray [$dataitems[$this->ncitoken]]   = $dataitems[$this->curr_proj_record_id_field];
+            }
+            array_push($data,$tempArray);
+        }
+
+        //print_r($recordStudyIdTokenMapArray);
+        if (count($data) > 0){
+            $this->startBatchAPIRequest($data, $recordStudyIdTokenMapArray);
+        } else {
+            //REDCap::logEvent(self::NCI_MODULE_LOG_NAME, "NO RECORD FOUND FOR PROCESSING (not eligible to process)");
+            $this->module->log("Send Deidentified batch : NO RECORD FOUND FOR PROCESSING (not eligible to process)", ['batch_job_id' => $this->batch_job_id]);
+        }
+
+        return $this->batch_job_id . " - record count :: " . count($data);
     }
 
     /** This function helps to initiaize all the variable which are necessary to enable service functionality */
@@ -114,6 +143,9 @@ class IHCSSendDeIdentifiedDataToNCIService
             $this->email_alert_from = $this->module->getProjectSetting("email_alert_from");
         }
 
+        if (!empty($this->module->getProjectSetting("deidentified-data-sent-status"))) {
+            $this->deidentified_data_sent_status = $this->module->getProjectSetting("deidentified-data-sent-status");
+        }
 
         if (!empty($this->module->getSubSettings("email-alert-notification-list"))) {
             $emaillistarray = array();
@@ -135,4 +167,99 @@ class IHCSSendDeIdentifiedDataToNCIService
         $this->curr_proj_record_id_field = REDCap::getRecordIdField();
         //$this->module->log("Init Process Ended", ['batch_job_id' => $this->batch_job_id]);
     }
+
+    function startBatchAPIRequest($redcap_data, $recordStudyIdTokenMapArray){
+        $requestdata = array();
+        $responseDataArray = array();
+
+        //split data set into batch size 
+        $chunk_data = array_chunk($redcap_data, $this->batch_size, true);
+
+        foreach ($chunk_data as $data) {
+
+            $requestbody = array();
+            $requestbody["data"] = $data;
+            //print_r( $requestbody);
+            $responseDataArray = $this->makeWebServiceRequest(json_encode($requestbody));
+            //print_r($responseDataArray);
+            //check the response status and proceed
+            if ($responseDataArray ["code"] == 200 ) {
+                //to update status back to REDCap record
+                $this->writeData($data,$recordStudyIdTokenMapArray);
+                
+            }
+        }
+
+    }
+
+
+        // This cURL function is used to make webservice API request to NCI Connect server
+    private function makeWebServiceRequest($requestBody)
+        {
+            $curl = curl_init();
+    
+            curl_setopt_array($curl, array(
+                CURLOPT_URL => $this->nci_connect_api_endpoint,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_ENCODING => "",
+                CURLOPT_FAILONERROR => true,
+                CURLOPT_MAXREDIRS => 10,
+                CURLOPT_TIMEOUT => 0,
+                CURLOPT_FOLLOWLOCATION => false,
+                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                CURLOPT_CUSTOMREQUEST => "POST",
+                CURLOPT_POSTFIELDS => "$requestBody",
+                CURLOPT_HTTPHEADER => array(
+                    "Content-Type: application/json",
+                    "Authorization: Bearer $this->nci_connect_api_key",
+                    "Content-Length: " . strlen($requestBody)
+                ) ,
+            ));
+    
+            $response = curl_exec($curl);
+            $err = curl_error($curl);
+    
+            if ($err) {
+                REDCap::logEvent(self::NCI_MODULE_LOG_NAME, $err);
+                $this->module->log("An error occurred . $err", [
+                    'batch_job_id' => $this->batch_job_id
+                ]);
+                REDCap::email(implode(', ', $this->email_alert_to), $this->email_alert_from, 'NCICohortLink - Send De-identified Job Network Error',  $err);
+            }
+    
+            curl_close($curl);
+            $out_array = json_decode($response, true);
+    
+            //Handle message errors from NCI
+            if ($out_array["code"] != 200)
+            {
+                $data_formatted = array();
+                foreach ($out_array as $this_field => $this_value)
+                {
+                    $data_formatted[] = "$this_field = '$this_value'";
+                }
+                $data_changes = implode(",\n", $data_formatted);
+                REDCap::logEvent(self::NCI_MODULE_LOG_NAME, $data_changes);
+            }
+            return $out_array;
+        }
+
+        private function writeData($data,$recordStudyIdTokenMapArray){
+            //minimal data write array
+            $recordlist = array();
+            foreach ($data as $record) {
+                $writeTempArray = array();
+                if (array_key_exists( $record["token"] , $recordStudyIdTokenMapArray)){
+                   $writeTempArray[$this->curr_proj_record_id_field] = $recordStudyIdTokenMapArray[$record["token"]];    
+                   $writeTempArray[$this->deidentified_data_sent_status] = 1;
+                }
+                array_push($recordlist,$writeTempArray);
+            }
+            
+            $responseJSON = json_encode($recordlist);
+            print_r($responseJSON);
+            $response = REDCap::saveData($this->module->getProjectId() , 'json', $responseJSON, 'overwrite',NULL,NULL,NULL,TRUE);
+            $this->module->log("Send Deidentified Data Status Saved To REDCap", ['batch_job_id' => $this->batch_job_id]);
+        }
+
 }

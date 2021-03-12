@@ -207,6 +207,13 @@
             "super-users-only": true
         },
         {
+            "key": "deidentified-data-sent-status",
+            "name": "Send De-identified Data To NCI :  Select output field to store the sent status",
+            "type": "field-list",
+            "required": true,
+            "super-users-only": true
+        },
+        {
             "key": "apimanager-rest-call-secret-key",
             "name": "Enter the secret key for invoke REST call request on this module functionality",
             "type": "text",
