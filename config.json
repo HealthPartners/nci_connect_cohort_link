@@ -85,7 +85,17 @@
             },
             "super-users-only": true
         },
-
+        {
+            "key": "dev-api-server-get-participant-data-url",
+            "name": "DEV-NCIConnect server - getParticipants API service endpoint",
+            "type": "text",
+            "required": true,
+            "branchingLogic": {
+                "field": "nciconnect-env",
+                "value": 1
+            },
+            "super-users-only": true
+        },
         {
             "key": "prod-nciapikey",
             "name": "PROD-NCIAPIKEY",
@@ -111,6 +121,17 @@
         {
             "key": "prod-api-server-submit-participant-data-url",
             "name": "PROD-NCIConnect server - submitParticipantsData API service endpoint",
+            "type": "text",
+            "required": true,
+            "branchingLogic": {
+                "field": "nciconnect-env",
+                "value": 2
+            },
+            "super-users-only": true
+        },
+        {
+            "key": "prod-api-server-get-participant-data-url",
+            "name": "PROD-NCIConnect server - getParticipants API service endpoint",
             "type": "text",
             "required": true,
             "branchingLogic": {
@@ -210,6 +231,20 @@
             "key": "deidentified-data-sent-status",
             "name": "Send De-identified Data To NCI :  Select output field to store the sent status",
             "type": "field-list",
+            "required": true,
+            "super-users-only": true
+        },
+        {
+            "key": "datasync-field-list",
+            "name": "Data Sync Field List : Enter comma seperated list of fields names to Sync (format : redcap_var_name=CONCEPTID,redcap_var_name=CONCEPTID)",
+            "type": "textarea",
+            "required": true,
+            "super-users-only": true
+        },
+        {
+            "key": "datasync-record-filter-logic",
+            "name": "Data Sync : Enter the record filter logic (similiar to report advanced filter logic) which used to select eligible studyid list",
+            "type": "textarea",
             "required": true,
             "super-users-only": true
         },

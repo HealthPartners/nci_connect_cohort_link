@@ -47,6 +47,7 @@ class IHCSSendDeIdentifiedDataToNCIService
         $redcap_conceptid_list = array();
         $redcap_conceptid_map = array();
         $recordStudyIdTokenMapArray = array();
+        $redcap_data_with_record_id = array();
         $redcap_data = array();
         $data = array() ; // used to send through API
         $this->module->log("Send Deidentified batch job started", ['batch_job_id' => $this->batch_job_id]);

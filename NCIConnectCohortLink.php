@@ -4,9 +4,11 @@ namespace HealthPartners\Institute\NCIConnectCohortLink;
 //Import Service 
 require_once("NCIConnectTokenAndPinGenService.php");
 require_once("IHCSSendDeIdentifiedDataToNCIService.php");
+require_once("IHCSDataSyncService.php");
 
 use HealthPartners\Institute\NCIConnectCohortLink\Service\NCIConnectTokenAndPinGenService as  NCIConnectTokenAndPinGenService;
 use HealthPartners\Institute\NCIConnectCohortLink\Service\IHCSSendDeIdentifiedDataToNCIService as  IHCSSendDeIdentifiedDataToNCIService;
+use HealthPartners\Institute\NCIConnectCohortLink\Service\IHCSDataSyncService as  IHCSDataSyncService;
 use Exception;
 use REDCap;
 
@@ -14,11 +16,12 @@ use REDCap;
 class NCIConnectCohortLink extends \ExternalModules\AbstractExternalModule {
      private $nciTokenAndPINGenService;
      private $sendDeIdentifiedDataToNCIService;
-
+     private $dataSyncService;
      public function __construct(){
          parent::__construct();
          $this->nciTokenAndPINGenService = new NCIConnectTokenAndPinGenService($this);
          $this->sendDeIdentifiedDataToNCIService = new IHCSSendDeIdentifiedDataToNCIService($this);
+         $this->dataSyncService = new IHCSDataSyncService($this);
      }
 
      // This function helps to force stop the current running job after the current running batch 
@@ -80,5 +83,8 @@ class NCIConnectCohortLink extends \ExternalModules\AbstractExternalModule {
        return $this->sendDeIdentifiedDataToNCIService->startNewBatchJob();
     }
 
+    function  startDataSyncBatchJob () {
+       return $this->dataSyncService->startNewBatchJob();  
+    }
 }
  

@@ -3,11 +3,22 @@ ignore_user_abort(true);//Helps to Run the script after client abort
 set_time_limit(1800); // Max of 30min batch script run to avoid unlimited run time settings
 //Simple routing process to execute the function for service requested
 
-if (isset($_GET['action']) && $_GET['action'] == "senddatatonci" &&  isset($_GET['passcode'])) { 
+if (isset($_GET['action']) && $_GET['action'] == "datasync" &&  isset($_GET['passcode'])) { 
     header('Content-Type: application/json');
     $rest_call_secret = $module->getProjectSetting("apimanager-rest-call-secret-key");
     if ( isset($_GET['passcode']) &&  $_GET['passcode'] == $rest_call_secret) {
-        $module->log("New Send De-identified data to NCI API REST Call request made");
+        $module->log("Data Sync Job request made");
+        $batchstatus = $module->startDataSyncBatchJob();
+        sendResponse("New Batch Job has been started successfully for Data Sync:" . $batchstatus );
+    }  else {
+        sendResponse("Invalid passcode for REST call invocation");
+    }
+}
+else if (isset($_GET['action']) && $_GET['action'] == "senddatatonci" &&  isset($_GET['passcode'])) { 
+    header('Content-Type: application/json');
+    $rest_call_secret = $module->getProjectSetting("apimanager-rest-call-secret-key");
+    if ( isset($_GET['passcode']) &&  $_GET['passcode'] == $rest_call_secret) {
+        $module->log("Send De-identified data to NCI API REST Call request made");
         $batchstatus = $module->startSendDeIdentifyDataToNCIBatchJob();
         sendResponse("New Batch Job has been started successfully for Send De-identified data to NCI :" . $batchstatus );
     }  else {
