@@ -260,7 +260,7 @@ class IHCSSendDeIdentifiedDataToNCIService
             $responseJSON = json_encode($recordlist);
             print_r($responseJSON);
             $response = REDCap::saveData($this->module->getProjectId() , 'json', $responseJSON, 'overwrite',NULL,NULL,NULL,TRUE);
-            $this->module->log("Send Deidentified Data Status Saved To REDCap", ['batch_job_id' => $this->batch_job_id]);
+            //$this->module->log("Send Deidentified Data Status Saved To REDCap", ['batch_job_id' => $this->batch_job_id]);
         }
 
 }

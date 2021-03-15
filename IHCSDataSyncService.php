@@ -1,5 +1,4 @@
 <?php
-
 namespace HealthPartners\Institute\NCIConnectCohortLink\Service;
 
 use Exception;
@@ -19,6 +18,7 @@ class IHCSDataSyncService
     private $fields_send_with_token_request; // to hold list of field(s) send part of API request - array.
     private $ncitoken;
     private $datasync_field_list;
+    private $is_DET; // Used to identify the job trigger by Data Entry Trigger
 
     //To track Batch progress
     private $curr_batch;
@@ -104,16 +104,23 @@ class IHCSDataSyncService
         foreach ($typelist as $type) {
             $limit = 100;
             $page = 1;
+            $individualToken = "";
+            //request individual if DET call 
+            if ($this->isDETCall()) {
+                foreach(array_keys($recordStudyIdTokenMapArray) as $key) {
+                    $individualToken = $key;
+                }
+                $type="individual&token=".$individualToken;
+            }
             // Loop through until Limit and dataSize value differnce which means no other data to fetch through pageination
             do {
                 unset($responseDataArray);
                 $responseDataArray = array();
                 $responseDataArray  = $this->makeWebServiceRequest($type, $limit, $page);
-                print_r($responseDataArray);
                 //Write data into REDCap
                 $this->writeData($responseDataArray, $redcap_conceptid_map, $recordStudyIdTokenMapArray);
                 $page++;
-            } while (count($responseDataArray) > 0 && $responseDataArray["code"] == 200 && $responseDataArray["limit"] == $responseDataArray["dataSize"]);
+            } while (count($responseDataArray) > 0 && $responseDataArray["code"] == 200 && array_key_exists("dataSize",$responseDataArray) && array_key_exists("limit",$responseDataArray)  && $responseDataArray["limit"] <= $responseDataArray["dataSize"]);
         }
     }
 
@@ -147,9 +154,8 @@ class IHCSDataSyncService
         }
 
         $responseJSON = json_encode($recordlist);
-        print_r($responseJSON);
         $response = REDCap::saveData($this->module->getProjectId(), 'json', $responseJSON, 'overwrite', NULL, NULL, NULL, TRUE);
-        $this->module->log("Send Deidentified Data Status Saved To REDCap", ['batch_job_id' => $this->batch_job_id]);
+        //$this->module->log("Data Sync Status Saved To REDCap", ['batch_job_id' => $this->batch_job_id]);
     }
 
     /**
@@ -214,6 +220,14 @@ class IHCSDataSyncService
             $this->record_filter_logic = $this->module->getProjectSetting("datasync-record-filter-logic");
         }
 
+        if (!empty($this->module->getProjectSetting("datasync-record-filter-logic"))) {
+            $this->record_filter_logic = $this->module->getProjectSetting("datasync-record-filter-logic");
+            if (isset($this->record_filter_logic_record_level) && !empty($this->record_filter_logic_record_level)) {
+                $this->record_filter_logic = $this->record_filter_logic  . $this->record_filter_logic_record_level;
+            }
+        }
+
+
         if (!empty($this->module->getProjectSetting("datasync-field-list"))) {
             $this->datasync_field_list = $this->module->getProjectSetting("datasync-field-list");
         }
@@ -246,5 +260,37 @@ class IHCSDataSyncService
         }
 
         $this->curr_proj_record_id_field = REDCap::getRecordIdField();
+    }
+
+
+
+     // This method will be called by the redcap_data_entry_form hook
+     public function redcap_data_entry_form_top($project_id, $record, $instrument, $event_id, $group_id, $repeat_instance)
+     {
+         $this->adhoctriggerform_list_array = array();
+         foreach ($this->module->getSubSettings("adhoctriggerform-list") as $key => $value ){
+             foreach($value["adhoctrigger-form"] as $formkey => $formvalue) {
+                 array_push($this->adhoctriggerform_list_array, $formvalue);
+             }
+ 
+         }
+         $this->adhoctriggerform_list_array =  array_unique($this->adhoctriggerform_list_array) ;
+         if ( isset($this->adhoctriggerform_list_array) &&  count($this->adhoctriggerform_list_array) > 0 && in_array($instrument, $this->adhoctriggerform_list_array)) {
+             $record_id_field = REDCap::getRecordIdField();
+             $this->record_filter_logic_record_level  =  "  AND ( [$record_id_field] = \"$record\" )";
+             //REDCap::logEvent(self::NCI_MODULE_LOG_NAME, "DATA ENTRY TRIGGER INITIATED", NULL,NULL,NULL, $project_id);
+             $this->module->log("DATA SYNC DATA ENTRY TRIGGER INITIATED $project_id :" . $project_id . " record Id:" . $record);
+             $this->is_DET = true;
+             $this->startNewBatchJob();
+         }
+     }
+ 
+     //To check if its DET call or not
+    public function isDETCall(){
+        if (isset($this->is_DET) && $this->is_DET == true) {
+            return true;
+        } else {
+            return false;
+        }
     }
 }

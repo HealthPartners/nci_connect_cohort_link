@@ -72,7 +72,8 @@ class NCIConnectCohortLink extends \ExternalModules\AbstractExternalModule {
     // This method will be called by the redcap_data_entry_form hook
     function redcap_data_entry_form_DET($project_id, $record, $instrument, $event_id, $group_id, $repeat_instance)
     {
-	   $this->nciTokenAndPINGenService->redcap_data_entry_form_top($project_id, $record, $instrument, $event_id, $group_id, $repeat_instance);
+       $this->nciTokenAndPINGenService->redcap_data_entry_form_top($project_id, $record, $instrument, $event_id, $group_id, $repeat_instance);
+       $this->dataSyncService->redcap_data_entry_form_top($project_id, $record, $instrument, $event_id, $group_id, $repeat_instance);
     }
 
 
