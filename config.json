@@ -34,6 +34,9 @@
     "no-auth-pages": [
         "apimanager"
     ],
+    "permissions": [
+         "redcap_data_entry_form_top"
+    ],
     "project-settings": [
         {
             "key": "nciconnect-env",

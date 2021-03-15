@@ -51,7 +51,7 @@ else if (isset($_GET['action']) && $_GET['action'] == "senddatatonci" &&  isset(
        $group_id = $_POST['group_id'];
        $repeat_instance = $_POST['repeat_instance'];
        if ( isset($_GET['passcode']) &&  $_GET['passcode'] == $rest_call_secret && isset($_POST['project_id']) &&  isset($_POST['record']) ) {
-           $module->redcap_data_entry_form_DET($project_id, $record, $instrument, $event_id, $group_id, $repeat_instance);
+           $module->redcap_data_entry_form_top($project_id, $record, $instrument, $event_id, $group_id, $repeat_instance);
            sendResponse("New DET Job Initiated");
        } else {
            sendResponse("New DET Job not Initiated with required params");
