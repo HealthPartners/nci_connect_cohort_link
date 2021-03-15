@@ -3,6 +3,8 @@ ignore_user_abort(true);//Helps to Run the script after client abort
 set_time_limit(1800); // Max of 30min batch script run to avoid unlimited run time settings
 //Simple routing process to execute the function for service requested
 
+//ob_start();
+
 if (isset($_GET['action']) && $_GET['action'] == "datasync" &&  isset($_GET['passcode'])) { 
     header('Content-Type: application/json');
     $rest_call_secret = $module->getProjectSetting("apimanager-rest-call-secret-key");
@@ -62,6 +64,13 @@ else if (isset($_GET['action']) && $_GET['action'] == "senddatatonci" &&  isset(
 function sendResponse($message){
     echo "{\"message\" : \"".$message."\"}" ;
 }
+
+//  Return the contents of the output buffer
+//$htmlStr = ob_get_contents();
+// Clean (erase) the output buffer and turn off output buffering
+//ob_end_clean();
+// Write final string to file
+//file_put_contents("/tmp/filelog.log", $htmlStr);
 
 
 ?>

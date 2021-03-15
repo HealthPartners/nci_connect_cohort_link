@@ -14,6 +14,7 @@ class NCIConnectTokenAndPinGenService
     private $nci_connect_api_endpoint; // To hold NCI API endpoint
     private $inputstudyid; // To hold input study id field
     private $outputtoken; //To hold output token field name
+    private $outputtokenurl;
     private $outputpin; //To hold output pin field name
     private $record_filter_logic; // to hold record filter condition which helps to only include valid studyids for api request
     private $fields_send_with_token_request; // to hold list of field(s) send part of token API request.
@@ -23,6 +24,7 @@ class NCIConnectTokenAndPinGenService
     private $record_filter_logic_record_level; // Used for DET
     private $adhoctriggerform_filter_logic ; // to used to hold record filter logic when instrument open
     private $adhoctriggerform_list_array; // used to store list of instruments register for adhoc trigger
+    private $nci_connect_pwa_endpoint; //Used to store PWA app URL 
     //To track Batch progress
     private $curr_batch;
     private $total_num_batch;
@@ -120,9 +122,11 @@ class NCIConnectTokenAndPinGenService
          if (isset($currnet_nci_env) && $currnet_nci_env == "1") {
              $this->nci_connect_api_key = $this->module->getProjectSetting("dev-nciapikey");
              $this->nci_connect_api_endpoint = $this->module->getProjectSetting("dev-api-server-get-participant-token-url");
+             $this->nci_connect_pwa_endpoint = $this->module->getProjectSetting("dev-api-server-pwa-url");
          } else if (isset($currnet_nci_env) && $currnet_nci_env == "2") {
              $this->nci_connect_api_key = $this->module->getProjectSetting("prod-nciapikey");
              $this->nci_connect_api_endpoint = $this->module->getProjectSetting("prod-api-server-get-participant-token-url");
+             $this->nci_connect_pwa_endpoint = $this->module->getProjectSetting("prod-api-server-pwa-url");
          }
 
          if (!empty($this->module->getProjectSetting("studyid-field-batch-process"))) {
@@ -131,6 +135,10 @@ class NCIConnectTokenAndPinGenService
          if (!empty($this->module->getProjectSetting("nci-token-store-field"))) {
              $this->outputtoken = $this->module->getProjectSetting("nci-token-store-field");
          }
+         if (!empty($this->module->getProjectSetting("nci-token-url-store-field"))) {
+            $this->outputtokenurl = $this->module->getProjectSetting("nci-token-url-store-field");
+        }
+
          if (!empty($this->module->getProjectSetting("nci-pin-store-field"))) {
              $this->outputpin = $this->module->getProjectSetting("nci-pin-store-field");
          }
@@ -318,6 +326,7 @@ class NCIConnectTokenAndPinGenService
             $newArray = array_change_key_case($eachItem, CASE_LOWER);
             $newArray[$this->outputtoken] = $newArray["token"]; // API Response from NCI
             $newArray[$this->outputpin] = $newArray["pin"]; // API Response from NCI
+            $newArray[$this->outputtokenurl] = $this->nci_connect_pwa_endpoint.$newArray["token"];
             if ($this->inputstudyid != "studyid") {
                 $newArray[$this->inputstudyid] = $newArray["studyid"];
                 unset($newArray["studyid"]);

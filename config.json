@@ -97,6 +97,17 @@
             "super-users-only": true
         },
         {
+            "key": "dev-api-server-pwa-url",
+            "name": "DEV-NCIConnect server - Particiapant PWA App endpoint",
+            "type": "text",
+            "required": true,
+            "branchingLogic": {
+                "field": "nciconnect-env",
+                "value": 1
+            },
+            "super-users-only": true
+        },
+        {
             "key": "prod-nciapikey",
             "name": "PROD-NCIAPIKEY",
             "type": "text",
@@ -141,6 +152,17 @@
             "super-users-only": true
         },
         {
+            "key": "prod-api-server-pwa-url",
+            "name": "PROD-NCIConnect server - Particiapant PWA App endpoint",
+            "type": "text",
+            "required": true,
+            "branchingLogic": {
+                "field": "nciconnect-env",
+                "value": 2
+            },
+            "super-users-only": true
+        },
+        {
             "key": "studyid-field-batch-process",
             "name": "The studyId field for generating token and pin",
             "type": "field-list",
@@ -149,6 +171,12 @@
         {
             "key": "nci-token-store-field",
             "name": "Where to store generated NCI token?",
+            "type": "field-list",
+            "required": true
+        },
+        {
+            "key": "nci-token-url-store-field",
+            "name": "Where to store generated URL with NCI token for signup?",
             "type": "field-list",
             "required": true
         },
