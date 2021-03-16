@@ -28,6 +28,7 @@ class IHCSSendDeIdentifiedDataToNCIService
     private $batch_job_id;
 
     const NCI_MAX_BATCH_SIZE = 500;
+    const NCI_MODULE_LOG_NAME = "EM - NCI Send deidentified data service";
 
     public function __construct($module)
     {

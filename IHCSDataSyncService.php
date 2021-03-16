@@ -27,6 +27,7 @@ class IHCSDataSyncService
     private $batch_job_id;
 
     const NCI_MAX_BATCH_SIZE = 500;
+    const NCI_MODULE_LOG_NAME = "EM - NCI Data Sync Service";
 
     public function __construct($module)
     {
