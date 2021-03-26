@@ -23,6 +23,17 @@ else if (isset($_GET['action']) && $_GET['action'] == "senddatatonci" &&  isset(
         $module->log("Send De-identified data to NCI API REST Call request made");
         $batchstatus = $module->startSendDeIdentifyDataToNCIBatchJob();
         sendResponse("New Batch Job has been started successfully for Send De-identified data to NCI :" . $batchstatus );
+        $module->log("Send Identity Verified  data to NCI API REST Call request made");
+    }  else {
+        sendResponse("Invalid passcode for REST call invocation");
+    }
+} else if (isset($_GET['action']) && $_GET['action'] == "sendivtabletonci" &&  isset($_GET['passcode'])) { 
+    header('Content-Type: application/json');
+    $rest_call_secret = $module->getProjectSetting("apimanager-rest-call-secret-key");
+    if ( isset($_GET['passcode']) &&  $_GET['passcode'] == $rest_call_secret) {
+        $module->log("Send Identity verification table data to NCI API REST Call request made");
+        $batchstatus = $module->startSendIVTableToNCIBatchJob();
+        sendResponse("New Batch Job has been started successfully for Send identity verification table data to NCI :" . $batchstatus );
     }  else {
         sendResponse("Invalid passcode for REST call invocation");
     }

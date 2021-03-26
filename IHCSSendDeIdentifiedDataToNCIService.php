@@ -21,11 +21,19 @@ class IHCSSendDeIdentifiedDataToNCIService
     private $ncitoken;
     private $deidentified_data_send_field_list; // to hold list of field(s) from EM config
     private $deidentified_data_sent_status;
+    
+    //utlize this service to send identity verification table since its similar de-identified data
+    private $is_for_iv_table;
+    private $iv_table_data_send_field_list; // to hold list of field(s) from EM config
+    private $iv_table_data_sent_status;
+
     //To track Batch progress
     private $curr_batch;
     private $total_num_batch;
     private $total_num_record_processed;
     private $batch_job_id;
+
+
 
     const NCI_MAX_BATCH_SIZE = 500;
     const NCI_MODULE_LOG_NAME = "EM - NCI Send deidentified data service";
@@ -37,6 +45,12 @@ class IHCSSendDeIdentifiedDataToNCIService
 
     public function startNewBatchJob()
     {
+        return $this->startBatchProcess();
+    }
+
+    public function startNewBatchJobForIVTable()
+    {   
+        $this->is_for_iv_table = true;
         return $this->startBatchProcess();
     }
 
@@ -83,7 +97,10 @@ class IHCSSendDeIdentifiedDataToNCIService
             foreach ($event as $eventid => $dataitems) {
                 foreach ($dataitems as $field => $val){
                     if (array_key_exists($field,$redcap_conceptid_map)) {// to find out match concept id variable
-                        $tempArray [$redcap_conceptid_map[$field]] = $val;
+                        if (isset ($val) && strlen($val) > 0) {
+                            $tempArray [$redcap_conceptid_map[$field]] = $val;
+                        }
+                        
                     } else {
                         //$data [$field] = $val;
                     }
@@ -127,9 +144,33 @@ class IHCSSendDeIdentifiedDataToNCIService
             $this->inputstudyid = $this->module->getProjectSetting("studyid-field-batch-process");
         }
 
-        if (!empty($this->module->getProjectSetting("deidentified-data-send-record-filter-logic"))) {
-            $this->record_filter_logic = $this->module->getProjectSetting("deidentified-data-send-record-filter-logic");
+        if (isset ($this->is_for_iv_table) && $this->is_for_iv_table == true) {
+            if (!empty($this->module->getProjectSetting("iv-table-data-send-record-filter-logic"))) {
+                $this->record_filter_logic = $this->module->getProjectSetting("iv-table-data-send-record-filter-logic");
+            }
+
+            if (!empty($this->module->getProjectSetting("iv-table-data-sent-status"))) {
+                $this->deidentified_data_sent_status = $this->module->getProjectSetting("iv-table-data-sent-status");
+            }
+
+            if (!empty($this->module->getProjectSetting("iv-table-data-send-field-list"))) {
+                $this->deidentified_data_send_field_list = $this->module->getProjectSetting("iv-table-data-send-field-list");
+            }
+
+        } else {
+            if (!empty($this->module->getProjectSetting("deidentified-data-send-record-filter-logic"))) {
+                $this->record_filter_logic = $this->module->getProjectSetting("deidentified-data-send-record-filter-logic");
+            }
+
+            if (!empty($this->module->getProjectSetting("deidentified-data-sent-status"))) {
+                $this->deidentified_data_sent_status = $this->module->getProjectSetting("deidentified-data-sent-status");
+            }
+
+            if (!empty($this->module->getProjectSetting("deidentified-data-send-field-list"))) {
+                $this->deidentified_data_send_field_list = $this->module->getProjectSetting("deidentified-data-send-field-list");
+            }
         }
+        
 
         if (!empty($this->module->getProjectSetting("batch_size_api_request"))) {
             $this->batch_size = $this->module->getProjectSetting("batch_size_api_request");
@@ -145,9 +186,7 @@ class IHCSSendDeIdentifiedDataToNCIService
             $this->email_alert_from = $this->module->getProjectSetting("email_alert_from");
         }
 
-        if (!empty($this->module->getProjectSetting("deidentified-data-sent-status"))) {
-            $this->deidentified_data_sent_status = $this->module->getProjectSetting("deidentified-data-sent-status");
-        }
+      
 
         if (!empty($this->module->getSubSettings("email-alert-notification-list"))) {
             $emaillistarray = array();
@@ -161,11 +200,6 @@ class IHCSSendDeIdentifiedDataToNCIService
             }
         }
 
-        if (!empty($this->module->getProjectSetting("deidentified-data-send-field-list"))) {
-            $this->deidentified_data_send_field_list = $this->module->getProjectSetting("deidentified-data-send-field-list");
-        }
-
-        
         $this->curr_proj_record_id_field = REDCap::getRecordIdField();
         //$this->module->log("Init Process Ended", ['batch_job_id' => $this->batch_job_id]);
     }

@@ -267,6 +267,27 @@
             "super-users-only": true
         },
         {
+            "key": "iv-table-data-send-record-filter-logic",
+            "name": "Send identity verification table Data To NCI : Enter the record filter logic (similiar to report advanced filter logic) which used to select eligible studyids",
+            "type": "textarea",
+            "required": true,
+            "super-users-only": true
+        },
+        {
+            "key": "iv-table-data-send-field-list",
+            "name": "Send identity verification table Data To NCI : Enter comma seperated list of fields names to send (format : redcap_var_name=CONCEPTID,redcap_var_name=CONCEPTID)",
+            "type": "textarea",
+            "required": true,
+            "super-users-only": true
+        },
+        {
+            "key": "iv-table-data-sent-status",
+            "name": "Send identity verification table Data To NCI :  Select output field to store the sent status",
+            "type": "field-list",
+            "required": true,
+            "super-users-only": true
+        },
+        {
             "key": "datasync-field-list",
             "name": "Data Sync Field List : Enter comma seperated list of fields names to Sync (format : redcap_var_name=CONCEPTID,redcap_var_name=CONCEPTID)",
             "type": "textarea",

@@ -69,7 +69,7 @@ class NCIConnectCohortLink extends \ExternalModules\AbstractExternalModule {
      } */
 
 
-    // This method will be called by the redcap_data_entry_form hook
+    // This method will be called by the redcap_data_entry_form hook and also from DET call
     function redcap_data_entry_form_top($project_id, $record, $instrument, $event_id, $group_id, $repeat_instance)
     {
        $this->nciTokenAndPINGenService->redcap_data_entry_form_top($project_id, $record, $instrument, $event_id, $group_id, $repeat_instance);
@@ -84,6 +84,13 @@ class NCIConnectCohortLink extends \ExternalModules\AbstractExternalModule {
     function startSendDeIdentifyDataToNCIBatchJob() {
        return $this->sendDeIdentifiedDataToNCIService->startNewBatchJob();
     }
+
+     /**
+     * This method will initiate the send identity verification table data to NCI batch process
+     */
+    function startSendIVTableToNCIBatchJob() {
+        return $this->sendDeIdentifiedDataToNCIService->startNewBatchJobForIVTable();
+     }
 
     function  startDataSyncBatchJob () {
        return $this->dataSyncService->startNewBatchJob();  
