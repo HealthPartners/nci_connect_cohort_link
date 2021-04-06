@@ -21,11 +21,16 @@ class IHCSSendDeIdentifiedDataToNCIService
     private $ncitoken;
     private $deidentified_data_send_field_list; // to hold list of field(s) from EM config
     private $deidentified_data_sent_status;
+   
+    private $is_preconsent_optout_stat_sent; // to hold the status of preconsent optout status if available part of transfer
+    private $is_max_preconsent_con_reach; //to hold the status of maximum preconsent contact reach status
     
     //utlize this service to send identity verification table since its similar de-identified data
     private $is_for_iv_table;
     private $iv_table_data_send_field_list; // to hold list of field(s) from EM config
     private $iv_table_data_sent_status;
+    private $iv_status_api_endpoint; // used to store identifyParticipant for manual veirfication participants
+    private $iv_status_api_sent_success; // used to store final IV status sent for write back to record
 
     //To track Batch progress
     private $curr_batch;
@@ -99,7 +104,16 @@ class IHCSSendDeIdentifiedDataToNCIService
                     if (array_key_exists($field,$redcap_conceptid_map)) {// to find out match concept id variable
                         if (isset ($val) && strlen($val) > 0) {
                             $tempArray [$redcap_conceptid_map[$field]] = $val;
+
+				//to check preconsent optout field or not
+	                        if($field == "preconsent_optout"   ) { // TODO with config
+        	                        $this->is_preconsent_optout_stat_sent = 1;
+                	        }
+				if($field == "rec_max_contact_reached"   ) { // TODO with config
+                                        $this->is_max_preconsent_con_reach = 1;
+                                }
                         }
+			
                         
                     } else {
                         //$data [$field] = $val;
@@ -157,6 +171,11 @@ class IHCSSendDeIdentifiedDataToNCIService
                 $this->deidentified_data_send_field_list = $this->module->getProjectSetting("iv-table-data-send-field-list");
             }
 
+	        if (!empty($this->nci_connect_api_endpoint)) {
+		    //TO-DO alternative design approch to find out URL
+                $this->iv_status_api_endpoint = str_replace("submitParticipantsData","identifyParticipant", $this->nci_connect_api_endpoint);
+            } 
+
         } else {
             if (!empty($this->module->getProjectSetting("deidentified-data-send-record-filter-logic"))) {
                 $this->record_filter_logic = $this->module->getProjectSetting("deidentified-data-send-record-filter-logic");
@@ -178,6 +197,8 @@ class IHCSSendDeIdentifiedDataToNCIService
             if (is_numeric($this->batch_size) > self::NCI_MAX_BATCH_SIZE) {
                 $this->batch_size = self::NCI_MAX_BATCH_SIZE;
             }
+	    $this->batch_size = self::NCI_MAX_BATCH_SIZE;    
+		
         } else {
             $this->batch_size = self::NCI_MAX_BATCH_SIZE;
         }
@@ -216,10 +237,12 @@ class IHCSSendDeIdentifiedDataToNCIService
             $requestbody = array();
             $requestbody["data"] = $data;
             //print_r( $requestbody);
-            $responseDataArray = $this->makeWebServiceRequest(json_encode($requestbody));
+            $responseDataArray = $this->makeWebServiceRequest($requestbody);
             //print_r($responseDataArray);
             //check the response status and proceed
             if ($responseDataArray ["code"] == 200 ) {
+	 	 
+		
                 //to update status back to REDCap record
                 $this->writeData($data,$recordStudyIdTokenMapArray);
                 
@@ -233,8 +256,8 @@ class IHCSSendDeIdentifiedDataToNCIService
     private function makeWebServiceRequest($requestBody)
         {
             $curl = curl_init();
-    
-            curl_setopt_array($curl, array(
+    	    $iv_table_requestBody = json_encode($requestBody);
+     	    curl_setopt_array($curl, array(
                 CURLOPT_URL => $this->nci_connect_api_endpoint,
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_ENCODING => "",
@@ -244,11 +267,11 @@ class IHCSSendDeIdentifiedDataToNCIService
                 CURLOPT_FOLLOWLOCATION => false,
                 CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
                 CURLOPT_CUSTOMREQUEST => "POST",
-                CURLOPT_POSTFIELDS => "$requestBody",
+                CURLOPT_POSTFIELDS => "$iv_table_requestBody",
                 CURLOPT_HTTPHEADER => array(
                     "Content-Type: application/json",
                     "Authorization: Bearer $this->nci_connect_api_key",
-                    "Content-Length: " . strlen($requestBody)
+                    "Content-Length: " . strlen($iv_table_requestBody)
                 ) ,
             ));
     
@@ -277,17 +300,70 @@ class IHCSSendDeIdentifiedDataToNCIService
                 $data_changes = implode(",\n", $data_formatted);
                 REDCap::logEvent(self::NCI_MODULE_LOG_NAME, $data_changes);
             }
+         
+	     if ( $out_array["code"] == 200 && isset ($this->is_for_iv_table) && $this->is_for_iv_table == true ) {
+                $url ="";
+                print_r($requestBody);
+                $url = $this->iv_status_api_endpoint . "?type=verified&"."token=". $requestBody["data"][0]["token"];
+ 	            $this->module->log("IV status send URL  " . $url , [
+                    'batch_job_id' => $this->batch_job_id
+                ]);
+
+                $output = $this->sendIVfinalStatusFlag($url);
+                $outputtemp_array = json_decode($response, true);
+                if ($outputtemp_array["code"] == 200) {
+                    $this->iv_status_api_sent_success = true;
+                }
+	     }
             return $out_array;
         }
+
+	private function sendIVfinalStatusFlag($url){
+	      $error_msg = "";
+	      $nci_auth_headers = [
+  		  "Authorization:Bearer $this->nci_connect_api_key" 
+	      ];
+	      $ch = curl_init();
+	      curl_setopt($ch,CURLOPT_URL,$url);
+	      curl_setopt($ch,CURLOPT_RETURNTRANSFER,true);
+          curl_setopt($ch, CURLOPT_HTTPHEADER, $nci_auth_headers);
+          $output=curl_exec($ch);
+
+	      if (curl_errno($ch)) {
+     		   $error_msg = curl_error($ch);
+		       REDCap::logEvent(self::NCI_MODULE_LOG_NAME, $error_msg);
+	           $this->module->log("An error occurred . $error_msg", [
+                    'batch_job_id' => $this->batch_job_id
+        	   ]);
+	           curl_close($ch);
+	           return $error_msg;
+	      }
+	      curl_close($ch);
+	      return $output;	
+
+	}
 
         private function writeData($data,$recordStudyIdTokenMapArray){
             //minimal data write array
             $recordlist = array();
             foreach ($data as $record) {
                 $writeTempArray = array();
-                if (array_key_exists( $record["token"] , $recordStudyIdTokenMapArray)){
+                if (array_key_exists( $record["token"] , $recordStudyIdTokenMapArray)) {
                    $writeTempArray[$this->curr_proj_record_id_field] = $recordStudyIdTokenMapArray[$record["token"]];    
                    $writeTempArray[$this->deidentified_data_sent_status] = 1;
+
+                    if (isset($this->is_preconsent_optout_stat_sent) && $this->is_preconsent_optout_stat_sent == 1) {
+                                $writeTempArray["sys_sent_precons_opt"] = 1;  // TODO with config variable
+                            
+                    }
+
+                    if (isset($this->iv_status_api_sent_success) && $this->iv_status_api_sent_success == true) {
+                            $writeTempArray["is_sent_iv_nci_done"] = 1;  // TODO with config variable
+                    }
+                    if (isset($this->is_max_preconsent_con_reach) && $this->is_max_preconsent_con_reach == 1) {
+                                    $writeTempArray["sys_sent_max_precon_reach"] = 1;  // TODO with config variable
+                    }
+                    
                 }
                 array_push($recordlist,$writeTempArray);
             }
