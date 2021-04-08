@@ -304,16 +304,33 @@ class IHCSSendDeIdentifiedDataToNCIService
 	     if ( $out_array["code"] == 200 && isset ($this->is_for_iv_table) && $this->is_for_iv_table == true ) {
                 $url ="";
                 print_r($requestBody);
-                $url = $this->iv_status_api_endpoint . "?type=verified&"."token=". $requestBody["data"][0]["token"];
- 	            $this->module->log("IV status send URL  " . $url , [
-                    'batch_job_id' => $this->batch_job_id
-                ]);
+                $decision = $requestBody["data"][0]["final_iden_verifi_status"];
+                $decisionflag=""; 
+                if (isset($decision) && $decision == "197316935"){
+                    $decisionflag = "verified";
 
-                $output = $this->sendIVfinalStatusFlag($url);
-                $outputtemp_array = json_decode($response, true);
-                if ($outputtemp_array["code"] == 200) {
-                    $this->iv_status_api_sent_success = true;
+                } else if (isset($decision) && $decision == "219863910") {
+                    $decisionflag = "cannotbeverified";
+                } else if (isset($decision) && $decision == "160161595") {
+                    $decisionflag = "outreachtimedout";
+                } else if (isset($decision) && $decision == "922622075") {
+                    $decisionflag = "duplicate";
                 }
+
+ 
+                if (isset($decisionflag) ) {
+                    $url = $this->iv_status_api_endpoint . "?type=". $decisionflag . "&token=". $requestBody["data"][0]["token"];
+                    $this->module->log("IV status send URL  " . $url , [
+                       'batch_job_id' => $this->batch_job_id
+                   ]);
+   
+                   $output = $this->sendIVfinalStatusFlag($url);
+                   $outputtemp_array = json_decode($response, true);
+                   if ($outputtemp_array["code"] == 200) {
+                       $this->iv_status_api_sent_success = true;
+                   }
+                }
+
 	     }
             return $out_array;
         }
@@ -363,7 +380,7 @@ class IHCSSendDeIdentifiedDataToNCIService
                     if (isset($this->is_max_preconsent_con_reach) && $this->is_max_preconsent_con_reach == 1) {
                                     $writeTempArray["sys_sent_max_precon_reach"] = 1;  // TODO with config variable
                     }
-                    
+
                 }
                 array_push($recordlist,$writeTempArray);
             }
