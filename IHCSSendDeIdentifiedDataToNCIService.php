@@ -82,8 +82,7 @@ class IHCSSendDeIdentifiedDataToNCIService
                 array_push($this->fields_send_with_token_request, $tempmap[0]);
             }
 
-            //add is_need_update_deiden to support updateParticipantData API use instead of submitParticipantsData from IV scanarios
-            array_push($this->fields_send_with_token_request,  "is_need_update_deiden");
+ 
         }
         
         if (isset($this->inputstudyid) && $this->inputstudyid == REDCap::getRecordIdField() ) {
@@ -116,9 +115,7 @@ class IHCSSendDeIdentifiedDataToNCIService
                                         $this->is_max_preconsent_con_reach = 1;
                             }
 
-                            if ($field == "is_need_update_deiden" && $val == "1") {
-                                $tempArray ["use_api"] = "updateParticipantData";
-                            }
+                            
                         }
 			
                         
