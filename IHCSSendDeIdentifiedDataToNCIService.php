@@ -81,6 +81,9 @@ class IHCSSendDeIdentifiedDataToNCIService
                 $redcap_conceptid_map [$tempmap[0]] = $tempmap[1];
                 array_push($this->fields_send_with_token_request, $tempmap[0]);
             }
+
+            //add is_need_update_deiden to support updateParticipantData API use instead of submitParticipantsData from IV scanarios
+            array_push($this->fields_send_with_token_request,  "is_need_update_deiden");
         }
         
         if (isset($this->inputstudyid) && $this->inputstudyid == REDCap::getRecordIdField() ) {
@@ -105,13 +108,17 @@ class IHCSSendDeIdentifiedDataToNCIService
                         if (isset ($val) && strlen($val) > 0) {
                             $tempArray [$redcap_conceptid_map[$field]] = $val;
 
-				//to check preconsent optout field or not
+				            //to check preconsent optout field or not
 	                        if($field == "preconsent_optout"   ) { // TODO with config
         	                        $this->is_preconsent_optout_stat_sent = 1;
                 	        }
-				if($field == "rec_max_contact_reached"   ) { // TODO with config
+				            if($field == "rec_max_contact_reached"   ) { // TODO with config
                                         $this->is_max_preconsent_con_reach = 1;
-                                }
+                            }
+
+                            if ($field == "is_need_update_deiden" && $val == "1") {
+                                $tempArray ["use_api"] = "updateParticipantData";
+                            }
                         }
 			
                         
@@ -369,18 +376,24 @@ class IHCSSendDeIdentifiedDataToNCIService
                    $writeTempArray[$this->curr_proj_record_id_field] = $recordStudyIdTokenMapArray[$record["token"]];    
                    $writeTempArray[$this->deidentified_data_sent_status] = 1;
 
-                    if (isset($this->is_preconsent_optout_stat_sent) && $this->is_preconsent_optout_stat_sent == 1) {
-                                $writeTempArray["sys_sent_precons_opt"] = 1;  // TODO with config variable
-                            
+                    if (isset ($record["158291096"]) && $record["158291096"] == "353358909") {
+                        $writeTempArray["sys_sent_precons_opt"] = 1;  // TODO with config variable
                     }
+                    if (isset($this->is_preconsent_optout_stat_sent) && $this->is_preconsent_optout_stat_sent == 1) {
+                    }
+
+                    if (isset ($record["875549268"]) && $record["875549268"] == "353358909") {
+                        $writeTempArray["sys_sent_max_precon_reach"] = 1;  // TODO with config variable
+                    }
+
+                    if (isset($this->is_max_preconsent_con_reach) && $this->is_max_preconsent_con_reach == 1) {
+                    }
+
 
                     if (isset($this->iv_status_api_sent_success) && $this->iv_status_api_sent_success == true) {
                             $writeTempArray["is_sent_iv_nci_done"] = 1;  // TODO with config variable
                     }
-                    if (isset($this->is_max_preconsent_con_reach) && $this->is_max_preconsent_con_reach == 1) {
-                                    $writeTempArray["sys_sent_max_precon_reach"] = 1;  // TODO with config variable
-                    }
-
+                   
                 }
                 array_push($recordlist,$writeTempArray);
             }
