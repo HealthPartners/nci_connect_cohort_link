@@ -181,6 +181,13 @@ class IHCSSendDeIdentifiedDataToNCIService
             $this->inputstudyid = $this->module->getProjectSetting("studyid-field-batch-process");
         }
 
+        if (!empty($this->nci_connect_api_endpoint)) {
+            //TO-DO alternative design approch to find out URL
+            $this->iv_status_api_endpoint = str_replace("submitParticipantsData","identifyParticipant", $this->nci_connect_api_endpoint);
+            $this->updateParticipantData_api_endpoint = str_replace("submitParticipantsData","updateParticipantData", $this->nci_connect_api_endpoint);
+
+        } 
+
         if (isset ($this->is_for_iv_table) && $this->is_for_iv_table == true) {
             if (!empty($this->module->getProjectSetting("iv-table-data-send-record-filter-logic"))) {
                 $this->record_filter_logic = $this->module->getProjectSetting("iv-table-data-send-record-filter-logic");
@@ -194,12 +201,6 @@ class IHCSSendDeIdentifiedDataToNCIService
                 $this->deidentified_data_send_field_list = $this->module->getProjectSetting("iv-table-data-send-field-list");
             }
 
-	        if (!empty($this->nci_connect_api_endpoint)) {
-		        //TO-DO alternative design approch to find out URL
-                $this->iv_status_api_endpoint = str_replace("submitParticipantsData","identifyParticipant", $this->nci_connect_api_endpoint);
-                $this->updateParticipantData_api_endpoint = str_replace("submitParticipantsData","updateParticipantData", $this->nci_connect_api_endpoint);
-
-            } 
 
         } else {
             if (!empty($this->module->getProjectSetting("deidentified-data-send-record-filter-logic"))) {
@@ -375,7 +376,7 @@ class IHCSSendDeIdentifiedDataToNCIService
                              
                             $nciUpdateArray = array();
 
-                            if (isset ($record["158291096"]) && $record["158291096"] == "353358909") {
+                            if (isset ($tmpRecord["158291096"]) && $tmpRecord["158291096"] == "353358909") {
                                 $nciUpdateArray["data"]["token"] = $tmpRecord["token"];
                                 $nciUpdateArray["data"]["state"]["158291096"] = $tmpRecord["158291096"];
                             } 
@@ -403,6 +404,12 @@ class IHCSSendDeIdentifiedDataToNCIService
                                     "Content-Length: " . strlen($update_requestBody)
                                 ) ,
                             ));
+
+                            //temp testing the outbound request body
+                            $this->module->log("the outbound request body for UPDATE data: $update_requestBody", [
+                            'batch_job_id' => $this->batch_job_id
+                            ]);
+
                             $response = curl_exec($curl);
                             //TODO- check for error response
                             curl_close($curl);
