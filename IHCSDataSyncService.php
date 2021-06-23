@@ -9,6 +9,7 @@ class IHCSDataSyncService
     //To Store Primay External Module Object
     private $module;
     private $nci_connect_api_key; // To hold NCI API key
+    private $nci_connect_api_key_file_loc; // To hold the private key file to generate access token
     private $nci_connect_api_endpoint; // To hold NCI API endpoint
     private $record_filter_logic; // to hold record filter condition which helps to only include valid studyids for api request
     private $batch_size; // to hold number of records send part of each API request
@@ -183,6 +184,9 @@ class IHCSDataSyncService
             ),
         ));
 
+        //temp testing the outbound request body
+        $this->module->log("the outbound request endpoint: $endpoint", ['batch_job_id' => $this->batch_job_id]);
+
         $response = curl_exec($curl);
         $err = curl_error($curl);
         if ($err) {
@@ -194,6 +198,10 @@ class IHCSDataSyncService
         }
 
         curl_close($curl);
+
+         //temp testing the outbound request body
+        // $this->module->log("the received data: $response", ['batch_job_id' => $this->batch_job_id]);
+
         $out_array = json_decode($response, true);
         return $out_array;
     }
@@ -202,10 +210,12 @@ class IHCSDataSyncService
     {
         $currnet_nci_env = $this->module->getProjectSetting("nciconnect-env"); // 1=DEV & 2=PROD
         if (isset($currnet_nci_env) && $currnet_nci_env == "1") {
-            $this->nci_connect_api_key = $this->module->getProjectSetting("dev-nciapikey");
+            $this->nci_connect_api_key_file_loc = $this->module->getProjectSetting("dev-nciapikey-file-loc");
+            $this->nci_connect_api_key = getAccessTokenFromKeyFile($this->nci_connect_api_key_file_loc);
             $this->nci_connect_api_endpoint = $this->module->getProjectSetting("dev-api-server-get-participant-data-url");
         } else if (isset($currnet_nci_env) && $currnet_nci_env == "2") {
-            $this->nci_connect_api_key = $this->module->getProjectSetting("prod-nciapikey");
+            $this->nci_connect_api_key_file_loc = $this->module->getProjectSetting("prod-nciapikey-file-loc");
+            $this->nci_connect_api_key = getAccessTokenFromKeyFile($this->nci_connect_api_key_file_loc);
             $this->nci_connect_api_endpoint = $this->module->getProjectSetting("prod-api-server-get-participant-data-url");
         }
 

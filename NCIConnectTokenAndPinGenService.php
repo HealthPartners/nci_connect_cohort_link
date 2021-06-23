@@ -11,6 +11,7 @@ class NCIConnectTokenAndPinGenService
 
     private $nciTokenAndPINGenService;
     private $nci_connect_api_key; // To hold NCI API key
+    private $nci_connect_api_key_file_loc; // To hold the private key file to generate access token
     private $nci_connect_api_endpoint; // To hold NCI API endpoint
     private $inputstudyid; // To hold input study id field
     private $outputtoken; //To hold output token field name
@@ -48,6 +49,7 @@ class NCIConnectTokenAndPinGenService
     public function __construct($module){
 
         $this->module = $module;
+
     }
     public function startNewBatchJob(){
         return $this->startBatchProcess();
@@ -84,9 +86,10 @@ class NCIConnectTokenAndPinGenService
                 array_push($this->fields_send_with_token_request, $this->inputstudyid);
             }
 
-
-            $data = REDCap::getData($this->module->getProjectId() , 'array', NULL, $this->fields_send_with_token_request, NULL, NULL, false, false, false, $this->record_filter_logic, false, false);
-
+            if ( $this->record_filter_logic != "") {
+                $data = REDCap::getData($this->module->getProjectId() , 'array', NULL, $this->fields_send_with_token_request, NULL, NULL, false, false, false, $this->record_filter_logic, false, false);
+            }
+            
             if(!$this->isDETCall()) {
                 //To create batch job detail and lock the job at project level
                 $this->module->setProjectSetting(self::IS_IMPORT_CURRENTLY_INPROGRESS, self::YES);
@@ -113,18 +116,20 @@ class NCIConnectTokenAndPinGenService
 
 
 
-     /** This function helps to initiaize all the variable which are necessary to enable service functionality */
+    /** This function helps to initiaize all the variable which are necessary to enable service functionality */
      private function iniGenerator()
      {
          //REDCap::logEvent(self::NCI_MODULE_LOG_NAME, "Module Init");
          //$this->module->log("Init Process Started", ['batch_job_id' => $this->batch_job_id]);
          $currnet_nci_env = $this->module->getProjectSetting("nciconnect-env"); // 1=DEV & 2=PROD
          if (isset($currnet_nci_env) && $currnet_nci_env == "1") {
-             $this->nci_connect_api_key = $this->module->getProjectSetting("dev-nciapikey");
+             $this->nci_connect_api_key_file_loc = $this->module->getProjectSetting("dev-nciapikey-file-loc");
+             $this->nci_connect_api_key = getAccessTokenFromKeyFile($this->nci_connect_api_key_file_loc);
              $this->nci_connect_api_endpoint = $this->module->getProjectSetting("dev-api-server-get-participant-token-url");
              $this->nci_connect_pwa_endpoint = $this->module->getProjectSetting("dev-api-server-pwa-url");
          } else if (isset($currnet_nci_env) && $currnet_nci_env == "2") {
-             $this->nci_connect_api_key = $this->module->getProjectSetting("prod-nciapikey");
+             $this->nci_connect_api_key_file_loc = $this->module->getProjectSetting("prod-nciapikey-file-loc");
+             $this->nci_connect_api_key = getAccessTokenFromKeyFile($this->nci_connect_api_key_file_loc);
              $this->nci_connect_api_endpoint = $this->module->getProjectSetting("prod-api-server-get-participant-token-url");
              $this->nci_connect_pwa_endpoint = $this->module->getProjectSetting("prod-api-server-pwa-url");
          }
@@ -254,6 +259,8 @@ class NCIConnectTokenAndPinGenService
             $this->module->log("Batch Job Total Batch :  " . count($chunk_data), ['batch_job_id' => $this->batch_job_id]);
         }
         foreach ($chunk_data as $data) {
+            unset($requestdata); 
+            $requestdata = array(); 
             if(!$this->isDETCall()){
                 $this->module->setProjectSetting(self::CURR_BATCH, $this->curr_batch);
                 $this->module->setProjectSetting(self::TOTAL_NUM_RECORD_PROCESSED, $record_count);
@@ -366,6 +373,11 @@ class NCIConnectTokenAndPinGenService
                 "Content-Length: " . strlen($requestBody)
             ) ,
         ));
+
+        //temp testing the outbound request body
+        $this->module->log("the outbound request body: $requestBody", [
+            'batch_job_id' => $this->batch_job_id
+        ]);
 
         $response = curl_exec($curl);
         $err = curl_error($curl);

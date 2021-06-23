@@ -23,7 +23,7 @@ else if (isset($_GET['action']) && $_GET['action'] == "senddatatonci" &&  isset(
         $module->log("Send De-identified data to NCI API REST Call request made");
         $batchstatus = $module->startSendDeIdentifyDataToNCIBatchJob();
         sendResponse("New Batch Job has been started successfully for Send De-identified data to NCI :" . $batchstatus );
-        $module->log("Send Identity Verified  data to NCI API REST Call request made");
+        //$module->log("Send Identity Verified  data to NCI API REST Call request made");
     }  else {
         sendResponse("Invalid passcode for REST call invocation");
     }

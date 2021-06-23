@@ -5,6 +5,8 @@ namespace HealthPartners\Institute\NCIConnectCohortLink;
 require_once("NCIConnectTokenAndPinGenService.php");
 require_once("IHCSSendDeIdentifiedDataToNCIService.php");
 require_once("IHCSDataSyncService.php");
+require_once("getaccesstoken.php");
+
 
 use HealthPartners\Institute\NCIConnectCohortLink\Service\NCIConnectTokenAndPinGenService as  NCIConnectTokenAndPinGenService;
 use HealthPartners\Institute\NCIConnectCohortLink\Service\IHCSSendDeIdentifiedDataToNCIService as  IHCSSendDeIdentifiedDataToNCIService;
@@ -22,9 +24,10 @@ class NCIConnectCohortLink extends \ExternalModules\AbstractExternalModule {
          $this->nciTokenAndPINGenService = new NCIConnectTokenAndPinGenService($this);
          $this->sendDeIdentifiedDataToNCIService = new IHCSSendDeIdentifiedDataToNCIService($this);
          $this->dataSyncService = new IHCSDataSyncService($this);
+
      }
 
-     // This function helps to force stop the current running job after the current running batch 
+     // This function helps to force stop the current running job after the current running batch
      public function forceBatchStop(){
          return $this->nciTokenAndPINGenService->forceBatchStop();
      }

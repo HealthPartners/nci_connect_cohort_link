@@ -57,8 +57,8 @@
             "super-users-only": true
         },
         {
-            "key": "dev-nciapikey",
-            "name": "DEV-NCIAPIKEY",
+            "key": "dev-nciapikey-file-loc",
+            "name": "DEV-NCIAPIKEY-FILE-LOC",
             "type": "text",
             "required": true,
             "branchingLogic": {
@@ -112,8 +112,8 @@
             "super-users-only": true
         },
         {
-            "key": "prod-nciapikey",
-            "name": "PROD-NCIAPIKEY",
+            "key": "prod-nciapikey-file-loc",
+            "name": "PROD-NCIAPIKEY-FILE-LOC",
             "type": "text",
             "required": true,
             "branchingLogic": {
@@ -192,7 +192,7 @@
         },
         {
             "key": "record-filter-logic",
-            "name": "Enter the record filter logic (similiar to report advanced filter logic) which used to select studyids eligible to send API request",
+            "name": "For Token & PIN Gen, Enter the record filter logic (similiar to report advanced filter logic) which used to select studyids eligible to send API request",
             "type": "textarea",
             "required": true
         },
