@@ -1,5 +1,5 @@
 <?php
-include_once __DIR__ . '../vendor/autoload.php';
+include_once __DIR__ . '/vendor/autoload.php';
 
 /**
  * This function calls the Google Server to get access token based on key file configured

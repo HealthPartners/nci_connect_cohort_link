@@ -4,7 +4,6 @@ set_time_limit(1800); // Max of 30min batch script run to avoid unlimited run ti
 //Simple routing process to execute the function for service requested
 
 //ob_start();
-
 if (isset($_GET['action']) && $_GET['action'] == "datasync" &&  isset($_GET['passcode'])) { 
     header('Content-Type: application/json');
     $rest_call_secret = $module->getProjectSetting("apimanager-rest-call-secret-key");

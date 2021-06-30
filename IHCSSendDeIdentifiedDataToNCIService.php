@@ -33,6 +33,7 @@ class IHCSSendDeIdentifiedDataToNCIService
     private $iv_status_api_endpoint; // used to store identifyParticipant for manual veirfication participants
     private $updateParticipantData_api_endpoint; // used to send preconset and max outreach
     private $iv_status_api_sent_success; // used to store final IV status sent for write back to record
+    private $iv_status_api_sent_success_msg; // used to store final IV status sent for write back to record
 
     //To track Batch progress
     private $curr_batch;
@@ -73,7 +74,7 @@ class IHCSSendDeIdentifiedDataToNCIService
         $redcap_data = array();
         $data = array() ; // used to send through API
         $this->module->log("Send Deidentified batch job started", ['batch_job_id' => $this->batch_job_id]);
-
+        
        
         //get all the list of data items from REDCap
         if (!isset ($this->fields_send_with_token_request)) {
@@ -163,6 +164,8 @@ class IHCSSendDeIdentifiedDataToNCIService
         //REDCap::logEvent(self::NCI_MODULE_LOG_NAME, "Module Init");
         //$this->module->log("Init Process Started", ['batch_job_id' => $this->batch_job_id]);
         $currnet_nci_env = $this->module->getProjectSetting("nciconnect-env"); // 1=DEV & 2=PROD
+
+        
         if (isset($currnet_nci_env) && $currnet_nci_env == "1") {
             $this->nci_connect_api_key_file_loc = $this->module->getProjectSetting("dev-nciapikey-file-loc");
             $this->nci_connect_api_key = getAccessTokenFromKeyFile($this->nci_connect_api_key_file_loc);
@@ -172,6 +175,8 @@ class IHCSSendDeIdentifiedDataToNCIService
             $this->nci_connect_api_key = getAccessTokenFromKeyFile($this->nci_connect_api_key_file_loc);
             $this->nci_connect_api_endpoint = $this->module->getProjectSetting("prod-api-server-submit-participant-data-url");
         }
+
+        
 
         if (!empty($this->module->getProjectSetting("nci-token-store-field"))) {
             $this->ncitoken = $this->module->getProjectSetting("nci-token-store-field");
@@ -251,6 +256,7 @@ class IHCSSendDeIdentifiedDataToNCIService
 
         $this->curr_proj_record_id_field = REDCap::getRecordIdField();
         //$this->module->log("Init Process Ended", ['batch_job_id' => $this->batch_job_id]);
+        
     }
 
     function startBatchAPIRequest($redcap_data, $recordStudyIdTokenMapArray){
@@ -306,9 +312,7 @@ class IHCSSendDeIdentifiedDataToNCIService
             ));
     
             //temp testing the outbound request body
-            $this->module->log("the outbound request body: $iv_table_requestBody", [
-                'batch_job_id' => $this->batch_job_id
-            ]);
+            $this->module->log("the outbound request body: $iv_table_requestBody", ['batch_job_id' => $this->batch_job_id]);
 
             $response = curl_exec($curl);
             $err = curl_error($curl);
@@ -340,34 +344,34 @@ class IHCSSendDeIdentifiedDataToNCIService
                 $url ="";
                 //visprint_r($requestBody);
                 foreach ($requestBody["data"] as $tmpRecord ) {
-                    $decision = $tmpRecord["final_iden_verifi_status"];
+                    //$decision = $tmpRecord["final_iden_verifi_status"];
+                    $decision = $tmpRecord["821247024"];
                     $decisionflag=""; 
-                    if (isset($decision) && $decision == "197316935"){
+                    if (isset($decision) && $decision == 197316935){
                         $decisionflag = "verified";
 
-                    } else if (isset($decision) && $decision == "219863910") {
+                    } else if (isset($decision) && $decision == 219863910) {
                         $decisionflag = "cannotbeverified";
-                    } else if (isset($decision) && $decision == "160161595") {
+                    } else if (isset($decision) && $decision == 160161595) {
                         $decisionflag = "outreachtimedout";
-                    } else if (isset($decision) && $decision == "922622075") {
+                    } else if (isset($decision) && $decision == 922622075) {
                         $decisionflag = "duplicate";
                     }
 
     
                     if (isset($decisionflag) ) {
                         $url = $this->iv_status_api_endpoint . "?type=". $decisionflag . "&token=". $tmpRecord["token"];
-                        $this->module->log("IV status send URL  " . $url , [
-                        'batch_job_id' => $this->batch_job_id
-                    ]);
-                    if ( !empty($decisionflag) && isset ($this->is_for_iv_table) && $this->is_for_iv_table == true )        {
-                        $output = $this->sendIVfinalStatusFlag($url);
-                        $outputtemp_array = json_decode($response, true);
-                        if ($outputtemp_array["code"] == 200) {
-                            $this->iv_status_api_sent_success = true;
-                        } else {
-                            //TODO
-                        } 
-                    }
+                        if ( !empty($decisionflag) && isset ($this->is_for_iv_table) && $this->is_for_iv_table == true )        {
+                            $this->module->log("IV status send URL  " . $url , [ 'batch_job_id' => $this->batch_job_id ]);
+                            $output = $this->sendIVfinalStatusFlag($url);
+                            $outputtemp_array = json_decode($response, true);
+                            if ($outputtemp_array["code"] == 200) {
+                                $this->iv_status_api_sent_success = true;
+                                $this->iv_status_api_sent_success_msg = $response;
+                            } else {
+                                //TODO
+                            } 
+                        }
                     
                     }
 
@@ -470,6 +474,7 @@ class IHCSSendDeIdentifiedDataToNCIService
 
                     if (isset($this->iv_status_api_sent_success) && $this->iv_status_api_sent_success == true) {
                             $writeTempArray["is_sent_iv_nci_done"] = 1;  // TODO with config variable
+                            $writeTempArray["nci_iv_sent_response"] = $this->iv_status_api_sent_success_msg;
                     }
                    
                 }
