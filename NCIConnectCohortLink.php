@@ -98,5 +98,9 @@ class NCIConnectCohortLink extends \ExternalModules\AbstractExternalModule {
     function  startDataSyncBatchJob () {
        return $this->dataSyncService->startNewBatchJob();  
     }
+
+    function startWithDrawDataSyncNewBatchJob() {
+        return $this->dataSyncService->startWithDrawDataSyncNewBatchJob();  
+    }
 }
  
