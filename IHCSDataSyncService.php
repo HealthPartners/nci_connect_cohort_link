@@ -21,6 +21,7 @@ class IHCSDataSyncService
     private $datasync_field_list;
     private $is_DET; // Used to identify the job trigger by Data Entry Trigger
 
+    private $is_withdraw_job; // Used to flag the job started for getting withdraw data items from NCI
     //To track Batch progress
     private $curr_batch;
     private $total_num_batch;
@@ -37,6 +38,11 @@ class IHCSDataSyncService
 
     public function startNewBatchJob()
     {
+        return $this->startBatchProcess();
+    }
+
+    public function startWithDrawDataSyncNewBatchJob()
+    {   $this->is_withdraw_job = true;
         return $this->startBatchProcess();
     }
 
@@ -227,22 +233,33 @@ class IHCSDataSyncService
             $this->inputstudyid = $this->module->getProjectSetting("studyid-field-batch-process");
         }
 
-        if (!empty($this->module->getProjectSetting("datasync-record-filter-logic"))) {
-            $this->record_filter_logic = $this->module->getProjectSetting("datasync-record-filter-logic");
+        // To check if the request for withdraw data sync job
+        if (isset ($this->is_withdraw_job) && $this->is_withdraw_job == true) { 
+            if (!empty($this->module->getProjectSetting("withdrawdatasync-record-filter-logic"))) {
+                $this->record_filter_logic = $this->module->getProjectSetting("withdrawdatasync-record-filter-logic");
+            }
+
+            if (!empty($this->module->getProjectSetting("withdrawdatasync-field-list"))) {
+                $this->datasync_field_list = $this->module->getProjectSetting("withdrawdatasync-field-list");
+            }
+
+        } else {
+
+            if (!empty($this->module->getProjectSetting("datasync-record-filter-logic"))) {
+                $this->record_filter_logic = $this->module->getProjectSetting("datasync-record-filter-logic");
+            }
+
+            if (!empty($this->module->getProjectSetting("datasync-field-list"))) {
+                $this->datasync_field_list = $this->module->getProjectSetting("datasync-field-list");
+            }
         }
 
         if (!empty($this->module->getProjectSetting("datasync-record-filter-logic"))) {
-            $this->record_filter_logic = $this->module->getProjectSetting("datasync-record-filter-logic");
+            //$this->record_filter_logic = $this->module->getProjectSetting("datasync-record-filter-logic");
             if (isset($this->record_filter_logic_record_level) && !empty($this->record_filter_logic_record_level)) {
                 $this->record_filter_logic = $this->record_filter_logic  . $this->record_filter_logic_record_level;
             }
         }
-
-
-        if (!empty($this->module->getProjectSetting("datasync-field-list"))) {
-            $this->datasync_field_list = $this->module->getProjectSetting("datasync-field-list");
-        }
-
 
         if (!empty($this->module->getProjectSetting("batch_size_api_request"))) {
             $this->batch_size = $this->module->getProjectSetting("batch_size_api_request");

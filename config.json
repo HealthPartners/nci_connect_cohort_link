@@ -302,6 +302,22 @@
             "super-users-only": true
         },
         {
+            "key": "withdrawdatasync-field-list",
+            "name": "WithDraw Data Sync Field List : Enter comma seperated list of fields names to Sync (format : redcap_var_name=CONCEPTID,redcap_var_name=CONCEPTID)",
+            "type": "textarea",
+            "required": true,
+            "super-users-only": true
+        },
+        {
+            "key": "withdrawdatasync-record-filter-logic",
+            "name": "WithDraw Data Sync : Enter the record filter logic (similiar to report advanced filter logic) which used to select eligible studyid list",
+            "type": "textarea",
+            "required": true,
+            "super-users-only": true
+        },
+
+
+        {
             "key": "apimanager-rest-call-secret-key",
             "name": "Enter the secret key for invoke REST call request on this module functionality",
             "type": "text",

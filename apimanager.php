@@ -14,8 +14,18 @@ if (isset($_GET['action']) && $_GET['action'] == "datasync" &&  isset($_GET['pas
     }  else {
         sendResponse("Invalid passcode for REST call invocation");
     }
-}
-else if (isset($_GET['action']) && $_GET['action'] == "senddatatonci" &&  isset($_GET['passcode'])) { 
+} else if (isset($_GET['action']) && $_GET['action'] == "withdrawdatasync" &&  isset($_GET['passcode'])) {
+    header('Content-Type: application/json');
+    $rest_call_secret = $module->getProjectSetting("apimanager-rest-call-secret-key");
+    if ( isset($_GET['passcode']) &&  $_GET['passcode'] == $rest_call_secret) {
+        $module->log("WithDraw Data Sync Job request made");
+        $batchstatus = $module->startWithDrawDataSyncNewBatchJob();
+        sendResponse("New Batch Job has been started successfully for WithDraw Data Sync:" . $batchstatus );
+    }  else {
+        sendResponse("Invalid passcode for REST call invocation");
+    }
+
+} else if (isset($_GET['action']) && $_GET['action'] == "senddatatonci" &&  isset($_GET['passcode'])) { 
     header('Content-Type: application/json');
     $rest_call_secret = $module->getProjectSetting("apimanager-rest-call-secret-key");
     if ( isset($_GET['passcode']) &&  $_GET['passcode'] == $rest_call_secret) {
