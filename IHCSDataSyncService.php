@@ -149,6 +149,26 @@ class IHCSDataSyncService
                      if (array_key_exists($conceptid, $record)) {
                         $writeTempArray[$redcap_var] = $record[$conceptid];
                         $isUpdate = true;
+                            
+                        //Custom Logic to change REDCap instrument status
+                        if ($conceptid == "Connect_ID" &&  isset($record[$conceptid]) && !empty($record[$conceptid])) {
+                            $writeTempArray["outreach_tracking_complete"] = "2";
+                            $writeTempArray["outreach_script_complete"] = "2";
+                            $writeTempArray["registration_tracking_complete"] = "2";
+                            $writeTempArray["registration_script_complete"] = "2";
+                            $writeTempArray["consent_tracking_complete"] = "2";
+                            $writeTempArray["consent_script_complete"] = "2";
+                        }
+                        // NCI Date of Signup Completion
+                        if ($conceptid == "335767902" &&  isset($record[$conceptid]) && !empty($record[$conceptid])) {
+                            $writeTempArray["registration_tracking_complete"] = "2";
+                            $writeTempArray["registration_script_complete"] = "2";
+                        }
+
+                        // NCI - Site Date of Identity Verification Completion
+                        if ($conceptid == "914594314" &&  isset($record[$conceptid]) && !empty($record[$conceptid])) {
+                            $writeTempArray["id_verification_tracking_complete"] = "2";    
+                        }
                      }
                 }
                 if ($isUpdate) {
