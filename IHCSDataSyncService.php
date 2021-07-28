@@ -169,6 +169,13 @@ class IHCSDataSyncService
                         if ($conceptid == "914594314" &&  isset($record[$conceptid]) && !empty($record[$conceptid])) {
                             $writeTempArray["id_verification_tracking_complete"] = "2";    
                         }
+
+                        //NCI - participant withdraw at Connect site
+                        if ( $conceptid == "906417725" &&  isset($record[$conceptid]) && !empty($record[$conceptid])) {
+                            $writeTempArray["nci_connect_record_detail"] = "1";                                
+                            $writeTempArray["basic_demography"] = "1";
+                        }
+
                      }
                 }
                 if ($isUpdate) {
