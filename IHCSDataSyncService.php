@@ -171,7 +171,7 @@ class IHCSDataSyncService
                         }
 
                         //NCI - participant withdraw at Connect site
-                        if ( $conceptid == "906417725" &&  isset($record[$conceptid]) && !empty($record[$conceptid])) {
+                        if ( $conceptid == "906417725" &&  isset($record[$conceptid]) && !empty($record[$conceptid]) && $record[$conceptid]=="353358909") {
                             $writeTempArray["nci_connect_record_detail"] = "1";                                
                             $writeTempArray["basic_demography"] = "1";
                         }
