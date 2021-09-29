@@ -429,8 +429,8 @@ class IHCSSendDeIdentifiedDataToNCIService
 	      $nci_auth_headers = [
   		  "Authorization:Bearer $this->nci_connect_api_key" 
 	      ];
-	      $ch = curl_init();
-	      curl_setopt($ch,CURLOPT_URL,$url);
+          $ch = curl_init();
+          curl_setopt($ch,CURLOPT_URL,$url);
 	      curl_setopt($ch,CURLOPT_RETURNTRANSFER,true);
           curl_setopt($ch, CURLOPT_HTTPHEADER, $nci_auth_headers);
           $output=curl_exec($ch);
