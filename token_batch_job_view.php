@@ -1,7 +1,7 @@
 <?php
 //This is used to check if already import process currenlty running
 $is_batch_locked = $module->isBatchJobLocked();
-$last_set_batch_log = $module->queryLogs("select log_id, timestamp, message, batch_job_id order by log_id desc limit 100");
+$last_set_batch_log = $module->queryLogs("select log_id, timestamp, message, batch_job_id order by log_id desc limit 10000");
 $curr_batch = 0;
 $total_num_batch=0;
 $total_num_record_processed=0;

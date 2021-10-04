@@ -31,6 +31,7 @@ class IHCSSendDeIdentifiedDataToNCIService
     private $iv_table_data_send_field_list; // to hold list of field(s) from EM config
     private $iv_table_data_sent_status;
     private $iv_status_api_endpoint; // used to store identifyParticipant for manual veirfication participants
+    private $consistencycheck_endpoint; // used to store consistencyCheck QC endpoint
     private $updateParticipantData_api_endpoint; // used to send preconset and max outreach
     private $iv_status_api_sent_success; // used to store final IV status sent for write back to record
     private $iv_status_api_sent_success_msg; // used to store final IV status sent for write back to record
@@ -190,7 +191,7 @@ class IHCSSendDeIdentifiedDataToNCIService
             //TO-DO alternative design approch to find out URL
             $this->iv_status_api_endpoint = str_replace("submitParticipantsData","identifyParticipant", $this->nci_connect_api_endpoint);
             $this->updateParticipantData_api_endpoint = str_replace("submitParticipantsData","updateParticipantData", $this->nci_connect_api_endpoint);
-
+            $this->consistencycheck_endpoint = str_replace("submitParticipantsData","consistencyCheck", $this->nci_connect_api_endpoint);
         } 
 
         if (isset ($this->is_for_iv_table) && $this->is_for_iv_table == true) {
@@ -292,7 +293,16 @@ class IHCSSendDeIdentifiedDataToNCIService
     private function makeWebServiceRequest($requestBody)
         {
             $curl = curl_init();
-    	    $iv_table_requestBody = json_encode($requestBody,JSON_NUMERIC_CHECK );
+            $iv_table_requestBody = json_encode($requestBody,JSON_NUMERIC_CHECK );
+
+            //Added ConsistencyCheck Process here 
+            $consistencyCheckResult = false;
+            $consistencyCheckResult = $this->consistencyCheck($iv_table_requestBody);
+            
+            if ( isset($consistencyCheckResult) && $consistencyCheckResult != true ) {
+                return  array(); // return emppty array if consistency check faild
+            }
+
      	    curl_setopt_array($curl, array(
                 CURLOPT_URL => $this->nci_connect_api_endpoint,
                 CURLOPT_RETURNTRANSFER => true,
@@ -359,7 +369,7 @@ class IHCSSendDeIdentifiedDataToNCIService
                     }
 
     
-                    if (isset($decisionflag) ) {
+                    if (isset($decisionflag) && !empty($decisionflag)) {
                         $url = $this->iv_status_api_endpoint . "?type=". $decisionflag . "&token=". $tmpRecord["token"];
                         if ( !empty($decisionflag) && isset ($this->is_for_iv_table) && $this->is_for_iv_table == true )        {
                             $this->module->log("IV status send URL  " . $url , [ 'batch_job_id' => $this->batch_job_id ]);
@@ -389,8 +399,19 @@ class IHCSSendDeIdentifiedDataToNCIService
                                 $nciUpdateArray["data"]["state"]["875549268"] = $tmpRecord["875549268"];
                             }
 
+                           
+
                             $curl = curl_init();
-    	                    $update_requestBody = json_encode($nciUpdateArray,JSON_NUMERIC_CHECK );
+                            $update_requestBody = json_encode($nciUpdateArray,JSON_NUMERIC_CHECK );
+                            
+                            //Added ConsistencyCheck Process here 
+                            $consistencyCheckResult = false;
+                            $consistencyCheckResult = $this->consistencyCheck($update_requestBody);
+                                
+                            if ( isset($consistencyCheckResult) && $consistencyCheckResult != true ) {
+                                     return  array(); // return emppty array if consistency check faild
+                            }
+
                             curl_setopt_array($curl, array(
                                 CURLOPT_URL => $this->updateParticipantData_api_endpoint,
                                 CURLOPT_RETURNTRANSFER => true,
@@ -424,6 +445,56 @@ class IHCSSendDeIdentifiedDataToNCIService
             return $out_array;
         }
 
+
+    private function consistencyCheck($body){
+        $curlCC = curl_init();
+
+        curl_setopt_array($curlCC, array(
+            CURLOPT_URL => $this->consistencycheck_endpoint,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => "",
+            CURLOPT_FAILONERROR => true,
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => false,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => "POST",
+            CURLOPT_POSTFIELDS => "$body",
+            CURLOPT_HTTPHEADER => array(
+                "Content-Type: application/json",
+                "Authorization: Bearer $this->nci_connect_api_key",
+                "Content-Length: " . strlen($body)
+            ) 
+        ));
+
+        //temp testing the outbound request body
+        $this->module->log("the outbound request body for consistencyCheck###: $body", ['batch_job_id' => $this->batch_job_id]);
+
+        $response = curl_exec($curlCC);
+        $err = curl_error($curlCC);
+        
+        if ($err) {
+            REDCap::logEvent(self::NCI_MODULE_LOG_NAME, $err);
+            $this->module->log("An error occurred on consistency check . $err", [
+                'batch_job_id' => $this->batch_job_id
+            ]);
+            REDCap::email(implode(', ', $this->email_alert_to), $this->email_alert_from, 'NCICohortLink - Send De-identified Job Network Error',  $err);
+            return false;
+        }
+
+        
+        $out_array = json_decode($response, true);
+        curl_close($curlCC);
+        //Handle message errors from NCI
+        if ($out_array["code"] != 200) {
+            $this->module->log("consistencyCheck ERROR message ###: $response", ['batch_job_id' => $this->batch_job_id]);
+            return false;
+        } else if ($out_array["code"] == 200){
+            $this->module->log("consistencyCheck SUCCESS message ###: $response", ['batch_job_id' => $this->batch_job_id]);
+            return true;
+        }
+        
+    }     
 	private function sendIVfinalStatusFlag($url){
 	      $error_msg = "";
 	      $nci_auth_headers = [
