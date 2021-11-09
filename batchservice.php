@@ -6,7 +6,7 @@ if (isset($_POST['action']) && $_POST['action'] == "start_batch" ) {
     //$module->setProjectSetting("is_import_currently_inprogress", "N");
     //$batchstatus = $module->startBatchProcess();
     //$module->forceClearBatchJobLock();
-    sleep(4);
+    sleep(5);
     $batchstatus = $module->startTokenAndPINGenBatchJob();
     header('Content-Type: application/json');
     if ($batchstatus) {

@@ -261,6 +261,7 @@ class NCIConnectTokenAndPinGenService
         foreach ($chunk_data as $data) {
             unset($requestdata); 
             $requestdata = array(); 
+            
             if(!$this->isDETCall()){
                 $this->module->setProjectSetting(self::CURR_BATCH, $this->curr_batch);
                 $this->module->setProjectSetting(self::TOTAL_NUM_RECORD_PROCESSED, $record_count);
@@ -306,6 +307,8 @@ class NCIConnectTokenAndPinGenService
                 //$this->clearCurrentBatchJobStatus();
                 break; // exit from continue processing becaus of force stop initiated
             }
+
+            sleep(10); // prevent multiple firing to API at a same time
 
         }
 
