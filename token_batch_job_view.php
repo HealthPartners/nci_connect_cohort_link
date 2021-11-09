@@ -17,9 +17,9 @@ if ($is_batch_locked===true) {
      <div class=" float-right">
         
         <button class="btn btn-sm btn-link mr-3" <?php if ($is_batch_locked===false){?>disabled<?php } ?>   onclick="window.location.reload()">Get Status Update</button>
-        <button class="btn btn-sm btn-outline-secondary mr-3 "  <?php if ($is_batch_locked===false){?>disabled<?php } ?>  onclick="NCIConnectTokenAndPinGenerator.doBatchCommand('force_stop')">Force Stop</button>
-        <button class="btn btn-sm btn-outline-secondary mr-3 "  <?php if ($is_batch_locked===false){?>disabled<?php } ?>  onclick="NCIConnectTokenAndPinGenerator.doBatchCommand('force_clear')">Force Clear</button>
-        <button class="btn btn-sm btn-outline-primary mr-3 "  <?php if ($is_batch_locked===true){?>disabled<?php } ?>  onclick="NCIConnectTokenAndPinGenerator.doBatchCommand('start_batch')">Start</button>
+        <button class="btn btn-sm btn-outline-secondary mr-3 "  <?php if ($is_batch_locked===false){?>disabled<?php } ?>  onclick="this.disabled=true;NCIConnectTokenAndPinGenerator.doBatchCommand('force_stop')">Force Stop</button>
+        <button class="btn btn-sm btn-outline-secondary mr-3 "  <?php if ($is_batch_locked===false){?>disabled<?php } ?>  onclick="this.disabled=true;NCIConnectTokenAndPinGenerator.doBatchCommand('force_clear')">Force Clear</button>
+        <button class="btn btn-sm btn-outline-primary mr-3 "  <?php if ($is_batch_locked===true){?>disabled<?php } ?>  onclick="this.disabled=true;NCIConnectTokenAndPinGenerator.doBatchCommand('start_batch')">Start</button>
      </div>
   </div>
   <div class="card-body" style="background-color: #000000!important;" > 
