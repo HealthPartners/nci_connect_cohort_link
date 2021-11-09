@@ -4,7 +4,7 @@ NCIConnectTokenAndPinGenerator.doBatchCommand = function (actionname) {
             url: NCIConnectTokenAndPinGenerator.batchServiceURL,
             data: { "action": actionname },
             type: 'POST',
-            timeout : 5000,
+            timeout : 15000,
             success: function (returnData) {
                 //Refresh the current page to display batch status
                 window.location.reload();
