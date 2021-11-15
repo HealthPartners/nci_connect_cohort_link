@@ -428,8 +428,36 @@ class NCIConnectTokenAndPinGenService
             //REDCap::logEvent(self::NCI_MODULE_LOG_NAME, "DATA ENTRY TRIGGER INITIATED", NULL,NULL,NULL, $project_id);
             $this->module->log("DATA ENTRY TRIGGER INITIATED");
             $this->is_DET = true;
+            //Added to handle passvie recurit who comes through self contact to HP. 
+            //HP will set campagin type - 398561594	88 = None of the above and 
+            $this->customHPForceSetCampaign($project_id, $record, $record_id_field);
             $this->startNewBatchJob();
         }
+    }
+
+    //Extended custom functionality for HP to force set campaign type and active to pass update type
+    private function customHPForceSetCampaign($project_id, $record, $record_id_field){
+        // for only the fields "studyId", "site_campaign_ty" and "sys_force_gen_tp"
+        if (isset($record) && !empty($record) && strlen($record) > 0 ) {
+            $tmpJSONData = REDCap::getData($project_id,'json', array($record), array($record_id_field, 'site_campaign_ty', 'sys_force_gen_tp'));
+            $tmpArrayData = json_decode($tmpJSONData, TRUE);
+            $this->module->log("customHPForceSetCampaign : " . $tmpJSONData);
+
+            if (isset ($tmpArrayData[0]["site_campaign_ty"]) && strlen($tmpArrayData[0]["site_campaign_ty"]) == 0
+                 && isset($tmpArrayData[0]["sys_force_gen_tp"]) && strlen($tmpArrayData[0]["sys_force_gen_tp"]) > 0 && $tmpArrayData[0]["sys_force_gen_tp"] == 1 
+                  && isset($tmpArrayData[0][$record_id_field]) && strlen($tmpArrayData[0][$record_id_field]) > 0){
+
+                $this->module->log("customHPForceSetCampaign : eligible to set campagn type and update type");
+
+                $tmpArrayData[0]["site_campaign_ty"]="398561594"; //398561594	None of the above
+                $tmpArrayData[0]["is_iv_update_rec_type"]="965707001"; //965707001	Active to Passive : Update recruit type
+                
+                // Import the data
+                $response = REDCap::saveData($project_id,'json', json_encode($tmpArrayData));
+            }
+        }
+       
+         
     }
 
 
