@@ -22,6 +22,8 @@ class IHCSSendDeIdentifiedDataToNCIService
     private $ncitoken;
     private $deidentified_data_send_field_list; // to hold list of field(s) from EM config
     private $deidentified_data_sent_status;
+
+    private $optout_reason_field_list; // used to send different parent strcture for optout reasons
    
     private $is_preconsent_optout_stat_sent; // to hold the status of preconsent optout status if available part of transfer
     private $is_max_preconsent_con_reach; //to hold the status of maximum preconsent contact reach status
@@ -117,6 +119,15 @@ class IHCSSendDeIdentifiedDataToNCIService
         $this->module->log("REDCap record with Data send : " . json_encode($redcap_data_with_record_id), [
             'batch_job_id' => $this->batch_job_id
         ]);
+
+
+        //to handle optout reason data send with differnt scanario, prepare lookup array and check if part of opt-out 
+        $listOfOptOutReason = array();
+        if (isset($this->optout_reason_field_list) && !empty ($this->optout_reason_field_list)) {
+            $listOfOptOutReason = explode (",", $this->optout_reason_field_list);     
+        }
+        
+
         //Prepare the data with concept id
         foreach ($redcap_data_with_record_id as $key => $event) {
             $tempArray= array();
@@ -124,8 +135,12 @@ class IHCSSendDeIdentifiedDataToNCIService
                 foreach ($dataitems as $field => $val){
                     if (array_key_exists($field,$redcap_conceptid_map)) {// to find out match concept id variable
                         if (isset ($val) && strlen($val) > 0) {
-                            $tempArray [$redcap_conceptid_map[$field]] = $val;
-
+                            
+                            if (in_array($redcap_conceptid_map[$field],$listOfOptOutReason )){ // part of opt-out reason
+                                $tempArray ["706283025"] [$redcap_conceptid_map[$field]] = $val;
+                            } else {
+                                $tempArray [$redcap_conceptid_map[$field]] = $val;
+                            }
 				            //to check preconsent optout field or not
 	                        if($field == "preconsent_optout"   ) { // TODO with config
         	                        $this->is_preconsent_optout_stat_sent = 1;
@@ -145,6 +160,7 @@ class IHCSSendDeIdentifiedDataToNCIService
                 // recordStudyIdTokenMapArray will used to write data back to REDCap record
                 $recordStudyIdTokenMapArray [$dataitems[$this->ncitoken]]   = $dataitems[$this->curr_proj_record_id_field];
             }
+            $this->module->log("tempArray for optout reason checks" . json_encode($tempArray) , ['batch_job_id' => $this->batch_job_id]);
             array_push($data,$tempArray);
         }
 
@@ -193,6 +209,10 @@ class IHCSSendDeIdentifiedDataToNCIService
             $this->updateParticipantData_api_endpoint = str_replace("submitParticipantsData","updateParticipantData", $this->nci_connect_api_endpoint);
             $this->consistencycheck_endpoint = str_replace("submitParticipantsData","consistencyCheck", $this->nci_connect_api_endpoint);
         } 
+
+        if (!empty($this->module->getProjectSetting("deidentified-data-optout-field-list"))) {
+            $this->optout_reason_field_list = $this->module->getProjectSetting("deidentified-data-optout-field-list");
+        }
 
         if (isset ($this->is_for_iv_table) && $this->is_for_iv_table == true) {
             if (!empty($this->module->getProjectSetting("iv-table-data-send-record-filter-logic"))) {
@@ -393,6 +413,9 @@ class IHCSSendDeIdentifiedDataToNCIService
                             if (isset ($tmpRecord["158291096"]) && $tmpRecord["158291096"] == "353358909") {
                                 $nciUpdateArray["data"]["token"] = $tmpRecord["token"];
                                 $nciUpdateArray["data"]["state"]["158291096"] = $tmpRecord["158291096"];
+                                if (isset ($tmpRecord["706283025"]) && count($tmpRecord["706283025"]) >0 ) {
+                                    $nciUpdateArray["data"]["state"]["706283025"] = $tmpRecord["706283025"];
+                                }
                             } 
                             if (isset ($tmpRecord["875549268"]) && $tmpRecord["875549268"] == "353358909") {
                                 $nciUpdateArray["data"]["token"] = $tmpRecord["token"];

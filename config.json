@@ -260,6 +260,13 @@
             "super-users-only": true
         },
         {
+            "key": "deidentified-data-optout-field-list",
+            "name": "Enter Opt-out reasons field list : Enter comma seperated list of conceptids send inside parent optout structure (format :  CONCEPTID,CONCEPTID)",
+            "type": "textarea",
+            "required": true,
+            "super-users-only": true
+        },
+        {
             "key": "deidentified-data-sent-status",
             "name": "Send De-identified Data To NCI :  Select output field to store the sent status",
             "type": "field-list",
