@@ -435,7 +435,7 @@ class NCIConnectTokenAndPinGenService
         }
     }
 
-    //Extended custom functionality for HP to force set campaign type and active to pass update type
+    //Extended custom functionality for HP to force set campaign type  
     private function customHPForceSetCampaign($project_id, $record, $record_id_field){
         // for only the fields "studyId", "site_campaign_ty" and "sys_force_gen_tp"
         if (isset($record) && !empty($record) && strlen($record) > 0 ) {
@@ -450,7 +450,8 @@ class NCIConnectTokenAndPinGenService
                 $this->module->log("customHPForceSetCampaign : eligible to set campagn type and update type");
 
                 $tmpArrayData[0]["site_campaign_ty"]="398561594"; //398561594	None of the above
-                $tmpArrayData[0]["is_iv_update_rec_type"]="965707001"; //965707001	Active to Passive : Update recruit type
+                // This is not needed after the discussion with NCI for HP
+                //$tmpArrayData[0]["is_iv_update_rec_type"]="965707001"; //965707001	Active to Passive : Update recruit type
                 
                 // Import the data
                 $response = REDCap::saveData($project_id,'json', json_encode($tmpArrayData));
