@@ -3,7 +3,50 @@ ignore_user_abort(true);//Helps to Run the script after client abort
 set_time_limit(1800); // Max of 30min batch script run to avoid unlimited run time settings
 //Simple routing process to execute the function for service requested
 
-if (isset($_GET['action']) && $_GET['action'] == "start_batch" &&  isset($_GET['passcode'])) {
+//ob_start();
+if (isset($_GET['action']) && $_GET['action'] == "datasync" &&  isset($_GET['passcode'])) { 
+    header('Content-Type: application/json');
+    $rest_call_secret = $module->getProjectSetting("apimanager-rest-call-secret-key");
+    if ( isset($_GET['passcode']) &&  $_GET['passcode'] == $rest_call_secret) {
+        $module->log("Data Sync Job request made");
+        $batchstatus = $module->startDataSyncBatchJob();
+        sendResponse("New Batch Job has been started successfully for Data Sync:" . $batchstatus );
+    }  else {
+        sendResponse("Invalid passcode for REST call invocation");
+    }
+} else if (isset($_GET['action']) && $_GET['action'] == "withdrawdatasync" &&  isset($_GET['passcode'])) {
+    header('Content-Type: application/json');
+    $rest_call_secret = $module->getProjectSetting("apimanager-rest-call-secret-key");
+    if ( isset($_GET['passcode']) &&  $_GET['passcode'] == $rest_call_secret) {
+        $module->log("WithDraw Data Sync Job request made");
+        $batchstatus = $module->startWithDrawDataSyncNewBatchJob();
+        sendResponse("New Batch Job has been started successfully for WithDraw Data Sync:" . $batchstatus );
+    }  else {
+        sendResponse("Invalid passcode for REST call invocation");
+    }
+
+} else if (isset($_GET['action']) && $_GET['action'] == "senddatatonci" &&  isset($_GET['passcode'])) { 
+    header('Content-Type: application/json');
+    $rest_call_secret = $module->getProjectSetting("apimanager-rest-call-secret-key");
+    if ( isset($_GET['passcode']) &&  $_GET['passcode'] == $rest_call_secret) {
+        $module->log("Send De-identified data to NCI API REST Call request made");
+        $batchstatus = $module->startSendDeIdentifyDataToNCIBatchJob();
+        sendResponse("New Batch Job has been started successfully for Send De-identified data to NCI :" . $batchstatus );
+        //$module->log("Send Identity Verified  data to NCI API REST Call request made");
+    }  else {
+        sendResponse("Invalid passcode for REST call invocation");
+    }
+} else if (isset($_GET['action']) && $_GET['action'] == "sendivtabletonci" &&  isset($_GET['passcode'])) { 
+    header('Content-Type: application/json');
+    $rest_call_secret = $module->getProjectSetting("apimanager-rest-call-secret-key");
+    if ( isset($_GET['passcode']) &&  $_GET['passcode'] == $rest_call_secret) {
+        $module->log("Send Identity verification table data to NCI API REST Call request made");
+        $batchstatus = $module->startSendIVTableToNCIBatchJob();
+        sendResponse("New Batch Job has been started successfully for Send identity verification table data to NCI :" . $batchstatus );
+    }  else {
+        sendResponse("Invalid passcode for REST call invocation");
+    }
+} else if  (isset($_GET['action']) && $_GET['action'] == "start_batch" &&  isset($_GET['passcode'])) {
     $rest_call_secret = $module->getProjectSetting("apimanager-rest-call-secret-key");
     header('Content-Type: application/json');
     if ( isset($_GET['passcode']) &&  $_GET['passcode'] == $rest_call_secret) {
@@ -28,7 +71,7 @@ if (isset($_GET['action']) && $_GET['action'] == "start_batch" &&  isset($_GET['
        $group_id = $_POST['group_id'];
        $repeat_instance = $_POST['repeat_instance'];
        if ( isset($_GET['passcode']) &&  $_GET['passcode'] == $rest_call_secret && isset($_POST['project_id']) &&  isset($_POST['record']) ) {
-           $module->redcap_data_entry_form_DET($project_id, $record, $instrument, $event_id, $group_id, $repeat_instance);
+           $module->redcap_data_entry_form_top($project_id, $record, $instrument, $event_id, $group_id, $repeat_instance);
            sendResponse("New DET Job Initiated");
        } else {
            sendResponse("New DET Job not Initiated with required params");
@@ -41,6 +84,13 @@ if (isset($_GET['action']) && $_GET['action'] == "start_batch" &&  isset($_GET['
 function sendResponse($message){
     echo "{\"message\" : \"".$message."\"}" ;
 }
+
+//  Return the contents of the output buffer
+//$htmlStr = ob_get_contents();
+// Clean (erase) the output buffer and turn off output buffering
+//ob_end_clean();
+// Write final string to file
+//file_put_contents("/tmp/filelog.log", $htmlStr);
 
 
 ?>

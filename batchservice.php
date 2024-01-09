@@ -6,9 +6,11 @@ if (isset($_POST['action']) && $_POST['action'] == "start_batch" ) {
     //$module->setProjectSetting("is_import_currently_inprogress", "N");
     //$batchstatus = $module->startBatchProcess();
     //$module->forceClearBatchJobLock();
+    sleep(5);
     $batchstatus = $module->startTokenAndPINGenBatchJob();
     header('Content-Type: application/json');
     if ($batchstatus) {
+
         sendResponse("New Batch Job Initated");
     } else {
         sendResponse("The existing batch job still in progress, not allowed to run new batch job");

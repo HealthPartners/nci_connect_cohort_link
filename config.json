@@ -3,6 +3,7 @@
     "namespace": "HealthPartners\\Institute\\NCIConnectCohortLink",
     "description": "This external module facilitates the link between REDCap project and NCI Connect API system for token/pin generation for the participant(s) and also supports other functional data exchanges.",
     "documentation": "README.pdf",
+    "framework-version": 5,
     "authors": [
         {
             "name": "Vijayakumar Thirumalai",
@@ -18,14 +19,14 @@
     "links": {
         "project": [
             {
-                "name": "NCI-Connect Token and PIN generator - Batch Job Manager",
-                "icon": "database_table",
+                "name": "NCI-Connect Token and PIN generator",
+                "icon": "fas fa-digital-tachograph",
                 "url": "token_batch_job_view.php",
                 "show-header-and-footer": true
             },
             {
-                "name": "NCI-Connect Token and PIN generator job API Service (ADMIN use only)",
-                "icon": "database_table",
+                "name": "NCI-Connect Job Service",
+                "icon": "fas fa-users-cog",
                 "url": "apimanager.php?NOAUTH",
                 "show-header-and-footer": true
             }
@@ -33,6 +34,9 @@
     },
     "no-auth-pages": [
         "apimanager"
+    ],
+    "permissions": [
+         "redcap_data_entry_form_top"
     ],
     "project-settings": [
         {
@@ -53,8 +57,8 @@
             "super-users-only": true
         },
         {
-            "key": "dev-nciapikey",
-            "name": "DEV-NCIAPIKEY",
+            "key": "dev-nciapikey-file-loc",
+            "name": "DEV-NCIAPIKEY-FILE-LOC",
             "type": "text",
             "required": true,
             "branchingLogic": {
@@ -75,8 +79,41 @@
             "super-users-only": true
         },
         {
-            "key": "prod-nciapikey",
-            "name": "PROD-NCIAPIKEY",
+            "key": "dev-api-server-submit-participant-data-url",
+            "name": "DEV-NCIConnect server - submitParticipantsData API service endpoint",
+            "type": "text",
+            "required": true,
+            "branchingLogic": {
+                "field": "nciconnect-env",
+                "value": 1
+            },
+            "super-users-only": true
+        },
+        {
+            "key": "dev-api-server-get-participant-data-url",
+            "name": "DEV-NCIConnect server - getParticipants API service endpoint",
+            "type": "text",
+            "required": true,
+            "branchingLogic": {
+                "field": "nciconnect-env",
+                "value": 1
+            },
+            "super-users-only": true
+        },
+        {
+            "key": "dev-api-server-pwa-url",
+            "name": "DEV-NCIConnect server - Particiapant PWA App endpoint",
+            "type": "text",
+            "required": true,
+            "branchingLogic": {
+                "field": "nciconnect-env",
+                "value": 1
+            },
+            "super-users-only": true
+        },
+        {
+            "key": "prod-nciapikey-file-loc",
+            "name": "PROD-NCIAPIKEY-FILE-LOC",
             "type": "text",
             "required": true,
             "branchingLogic": {
@@ -97,7 +134,40 @@
             "super-users-only": true
         },
         {
-            "key": "studyid-for-token-pin-gen",
+            "key": "prod-api-server-submit-participant-data-url",
+            "name": "PROD-NCIConnect server - submitParticipantsData API service endpoint",
+            "type": "text",
+            "required": true,
+            "branchingLogic": {
+                "field": "nciconnect-env",
+                "value": 2
+            },
+            "super-users-only": true
+        },
+        {
+            "key": "prod-api-server-get-participant-data-url",
+            "name": "PROD-NCIConnect server - getParticipants API service endpoint",
+            "type": "text",
+            "required": true,
+            "branchingLogic": {
+                "field": "nciconnect-env",
+                "value": 2
+            },
+            "super-users-only": true
+        },
+        {
+            "key": "prod-api-server-pwa-url",
+            "name": "PROD-NCIConnect server - Particiapant PWA App endpoint",
+            "type": "text",
+            "required": true,
+            "branchingLogic": {
+                "field": "nciconnect-env",
+                "value": 2
+            },
+            "super-users-only": true
+        },
+        {
+            "key": "studyid-field-batch-process",
             "name": "The studyId field for generating token and pin",
             "type": "field-list",
             "required": true
@@ -109,6 +179,12 @@
             "required": true
         },
         {
+            "key": "nci-token-url-store-field",
+            "name": "Where to store generated URL with NCI token for signup?",
+            "type": "field-list",
+            "required": true
+        },
+        {
             "key": "nci-pin-store-field",
             "name": "where to store generated NCI PIN? ",
             "type": "field-list",
@@ -116,7 +192,7 @@
         },
         {
             "key": "record-filter-logic",
-            "name": "Enter the record filter logic (similiar to report advanced filter logic) which used to select studyids eligible to send API request",
+            "name": "For Token & PIN Gen, Enter the record filter logic (similiar to report advanced filter logic) which used to select studyids eligible to send API request",
             "type": "textarea",
             "required": true
         },
@@ -170,6 +246,85 @@
             ]
         },
         {
+            "key": "deidentified-data-send-record-filter-logic",
+            "name": "Send De-identified Data To NCI : Enter the record filter logic (similiar to report advanced filter logic) which used to select eligible studyids",
+            "type": "textarea",
+            "required": true,
+            "super-users-only": true
+        },
+        {
+            "key": "deidentified-data-send-field-list",
+            "name": "Send De-identified Data To NCI : Enter comma seperated list of fields names to send (format : redcap_var_name=CONCEPTID,redcap_var_name=CONCEPTID)",
+            "type": "textarea",
+            "required": true,
+            "super-users-only": true
+        },
+        {
+            "key": "deidentified-data-optout-field-list",
+            "name": "Enter Opt-out reasons field list : Enter comma seperated list of conceptids send inside parent optout structure (format :  CONCEPTID,CONCEPTID)",
+            "type": "textarea",
+            "required": true,
+            "super-users-only": true
+        },
+        {
+            "key": "deidentified-data-sent-status",
+            "name": "Send De-identified Data To NCI :  Select output field to store the sent status",
+            "type": "field-list",
+            "required": true,
+            "super-users-only": true
+        },
+        {
+            "key": "iv-table-data-send-record-filter-logic",
+            "name": "Send identity verification table Data To NCI : Enter the record filter logic (similiar to report advanced filter logic) which used to select eligible studyids",
+            "type": "textarea",
+            "required": true,
+            "super-users-only": true
+        },
+        {
+            "key": "iv-table-data-send-field-list",
+            "name": "Send identity verification table Data To NCI : Enter comma seperated list of fields names to send (format : redcap_var_name=CONCEPTID,redcap_var_name=CONCEPTID)",
+            "type": "textarea",
+            "required": true,
+            "super-users-only": true
+        },
+        {
+            "key": "iv-table-data-sent-status",
+            "name": "Send identity verification table Data To NCI :  Select output field to store the sent status",
+            "type": "field-list",
+            "required": true,
+            "super-users-only": true
+        },
+        {
+            "key": "datasync-field-list",
+            "name": "Data Sync Field List : Enter comma seperated list of fields names to Sync (format : redcap_var_name=CONCEPTID,redcap_var_name=CONCEPTID)",
+            "type": "textarea",
+            "required": true,
+            "super-users-only": true
+        },
+        {
+            "key": "datasync-record-filter-logic",
+            "name": "Data Sync : Enter the record filter logic (similiar to report advanced filter logic) which used to select eligible studyid list",
+            "type": "textarea",
+            "required": true,
+            "super-users-only": true
+        },
+        {
+            "key": "withdrawdatasync-field-list",
+            "name": "WithDraw Data Sync Field List : Enter comma seperated list of fields names to Sync (format : redcap_var_name=CONCEPTID,redcap_var_name=CONCEPTID)",
+            "type": "textarea",
+            "required": true,
+            "super-users-only": true
+        },
+        {
+            "key": "withdrawdatasync-record-filter-logic",
+            "name": "WithDraw Data Sync : Enter the record filter logic (similiar to report advanced filter logic) which used to select eligible studyid list",
+            "type": "textarea",
+            "required": true,
+            "super-users-only": true
+        },
+
+
+        {
             "key": "apimanager-rest-call-secret-key",
             "name": "Enter the secret key for invoke REST call request on this module functionality",
             "type": "text",
@@ -178,7 +333,7 @@
         }
     ],
     "compatibility": {
-		"php-version-min": "5.5.0",
+		"php-version-min": "7.0.0",
 		"php-version-max": "",
 		"redcap-version-min": "9.1.9",
 		"redcap-version-max": ""

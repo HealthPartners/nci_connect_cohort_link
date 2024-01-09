@@ -1,24 +1,33 @@
 <?php
 // Set the namespace defined in your config file
 namespace HealthPartners\Institute\NCIConnectCohortLink;
-//Import Service for Token and PIN Generator
+//Import Service 
 require_once("NCIConnectTokenAndPinGenService.php");
+require_once("IHCSSendDeIdentifiedDataToNCIService.php");
+require_once("IHCSDataSyncService.php");
+require_once("getaccesstoken.php");
+
 
 use HealthPartners\Institute\NCIConnectCohortLink\Service\NCIConnectTokenAndPinGenService as  NCIConnectTokenAndPinGenService;
-
+use HealthPartners\Institute\NCIConnectCohortLink\Service\IHCSSendDeIdentifiedDataToNCIService as  IHCSSendDeIdentifiedDataToNCIService;
+use HealthPartners\Institute\NCIConnectCohortLink\Service\IHCSDataSyncService as  IHCSDataSyncService;
 use Exception;
 use REDCap;
 
 // NCIConnectTokenAndPinGenerator module class, which must extend AbstractExternalModule 
 class NCIConnectCohortLink extends \ExternalModules\AbstractExternalModule {
      private $nciTokenAndPINGenService;
-
+     private $sendDeIdentifiedDataToNCIService;
+     private $dataSyncService;
      public function __construct(){
          parent::__construct();
          $this->nciTokenAndPINGenService = new NCIConnectTokenAndPinGenService($this);
+         $this->sendDeIdentifiedDataToNCIService = new IHCSSendDeIdentifiedDataToNCIService($this);
+         $this->dataSyncService = new IHCSDataSyncService($this);
+
      }
 
-     // This function helps to force stop the current running job after the current running batch 
+     // This function helps to force stop the current running job after the current running batch
      public function forceBatchStop(){
          return $this->nciTokenAndPINGenService->forceBatchStop();
      }
@@ -63,13 +72,35 @@ class NCIConnectCohortLink extends \ExternalModules\AbstractExternalModule {
      } */
 
 
-    // This method will be called by the redcap_data_entry_form hook
-    function redcap_data_entry_form_DET($project_id, $record, $instrument, $event_id, $group_id, $repeat_instance)
+    // This method will be called by the redcap_data_entry_form hook and also from DET call
+    function redcap_data_entry_form_top($project_id, $record, $instrument, $event_id, $group_id, $repeat_instance)
     {
-	   $this->nciTokenAndPINGenService->redcap_data_entry_form_top($project_id, $record, $instrument, $event_id, $group_id, $repeat_instance);
+       $this->nciTokenAndPINGenService->redcap_data_entry_form_top($project_id, $record, $instrument, $event_id, $group_id, $repeat_instance);
+       $this->dataSyncService->redcap_data_entry_form_top($project_id, $record, $instrument, $event_id, $group_id, $repeat_instance);
     }
 
 
 
+    /**
+     * This method will initiate the send de-identified data to NCI batch process
+     */
+    function startSendDeIdentifyDataToNCIBatchJob() {
+       return $this->sendDeIdentifiedDataToNCIService->startNewBatchJob();
+    }
+
+     /**
+     * This method will initiate the send identity verification table data to NCI batch process
+     */
+    function startSendIVTableToNCIBatchJob() {
+        return $this->sendDeIdentifiedDataToNCIService->startNewBatchJobForIVTable();
+     }
+
+    function  startDataSyncBatchJob () {
+       return $this->dataSyncService->startNewBatchJob();  
+    }
+
+    function startWithDrawDataSyncNewBatchJob() {
+        return $this->dataSyncService->startWithDrawDataSyncNewBatchJob();  
+    }
 }
  

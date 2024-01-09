@@ -11,9 +11,11 @@ class NCIConnectTokenAndPinGenService
 
     private $nciTokenAndPINGenService;
     private $nci_connect_api_key; // To hold NCI API key
+    private $nci_connect_api_key_file_loc; // To hold the private key file to generate access token
     private $nci_connect_api_endpoint; // To hold NCI API endpoint
     private $inputstudyid; // To hold input study id field
     private $outputtoken; //To hold output token field name
+    private $outputtokenurl;
     private $outputpin; //To hold output pin field name
     private $record_filter_logic; // to hold record filter condition which helps to only include valid studyids for api request
     private $fields_send_with_token_request; // to hold list of field(s) send part of token API request.
@@ -23,6 +25,7 @@ class NCIConnectTokenAndPinGenService
     private $record_filter_logic_record_level; // Used for DET
     private $adhoctriggerform_filter_logic ; // to used to hold record filter logic when instrument open
     private $adhoctriggerform_list_array; // used to store list of instruments register for adhoc trigger
+    private $nci_connect_pwa_endpoint; //Used to store PWA app URL 
     //To track Batch progress
     private $curr_batch;
     private $total_num_batch;
@@ -46,6 +49,7 @@ class NCIConnectTokenAndPinGenService
     public function __construct($module){
 
         $this->module = $module;
+
     }
     public function startNewBatchJob(){
         return $this->startBatchProcess();
@@ -74,7 +78,7 @@ class NCIConnectTokenAndPinGenService
             if (!isset ($this->fields_send_with_token_request)) {
                 $this->fields_send_with_token_request = array();
             }
-             ;
+            
             if (isset($this->inputstudyid) && $this->inputstudyid == REDCap::getRecordIdField() ) {
                 array_push($this->fields_send_with_token_request, $this->inputstudyid);
             } else {
@@ -82,9 +86,10 @@ class NCIConnectTokenAndPinGenService
                 array_push($this->fields_send_with_token_request, $this->inputstudyid);
             }
 
-
-            $data = REDCap::getData($this->module->getProjectId() , 'array', NULL, $this->fields_send_with_token_request, NULL, NULL, false, false, false, $this->record_filter_logic, false, false);
-
+            if ( $this->record_filter_logic != "") {
+                $data = REDCap::getData($this->module->getProjectId() , 'array', NULL, $this->fields_send_with_token_request, NULL, NULL, false, false, false, $this->record_filter_logic, false, false);
+            }
+            
             if(!$this->isDETCall()) {
                 //To create batch job detail and lock the job at project level
                 $this->module->setProjectSetting(self::IS_IMPORT_CURRENTLY_INPROGRESS, self::YES);
@@ -111,26 +116,34 @@ class NCIConnectTokenAndPinGenService
 
 
 
-     /** This function helps to initiaize all the variable which are necessary to enable module functionality */
+    /** This function helps to initiaize all the variable which are necessary to enable service functionality */
      private function iniGenerator()
      {
          //REDCap::logEvent(self::NCI_MODULE_LOG_NAME, "Module Init");
          //$this->module->log("Init Process Started", ['batch_job_id' => $this->batch_job_id]);
          $currnet_nci_env = $this->module->getProjectSetting("nciconnect-env"); // 1=DEV & 2=PROD
          if (isset($currnet_nci_env) && $currnet_nci_env == "1") {
-             $this->nci_connect_api_key = $this->module->getProjectSetting("dev-nciapikey");
+             $this->nci_connect_api_key_file_loc = $this->module->getProjectSetting("dev-nciapikey-file-loc");
+             $this->nci_connect_api_key = getAccessTokenFromKeyFile($this->nci_connect_api_key_file_loc);
              $this->nci_connect_api_endpoint = $this->module->getProjectSetting("dev-api-server-get-participant-token-url");
+             $this->nci_connect_pwa_endpoint = $this->module->getProjectSetting("dev-api-server-pwa-url");
          } else if (isset($currnet_nci_env) && $currnet_nci_env == "2") {
-             $this->nci_connect_api_key = $this->module->getProjectSetting("prod-nciapikey");
+             $this->nci_connect_api_key_file_loc = $this->module->getProjectSetting("prod-nciapikey-file-loc");
+             $this->nci_connect_api_key = getAccessTokenFromKeyFile($this->nci_connect_api_key_file_loc);
              $this->nci_connect_api_endpoint = $this->module->getProjectSetting("prod-api-server-get-participant-token-url");
+             $this->nci_connect_pwa_endpoint = $this->module->getProjectSetting("prod-api-server-pwa-url");
          }
 
-         if (!empty($this->module->getProjectSetting("studyid-for-token-pin-gen"))) {
-             $this->inputstudyid = $this->module->getProjectSetting("studyid-for-token-pin-gen");
+         if (!empty($this->module->getProjectSetting("studyid-field-batch-process"))) {
+             $this->inputstudyid = $this->module->getProjectSetting("studyid-field-batch-process");
          }
          if (!empty($this->module->getProjectSetting("nci-token-store-field"))) {
              $this->outputtoken = $this->module->getProjectSetting("nci-token-store-field");
          }
+         if (!empty($this->module->getProjectSetting("nci-token-url-store-field"))) {
+            $this->outputtokenurl = $this->module->getProjectSetting("nci-token-url-store-field");
+        }
+
          if (!empty($this->module->getProjectSetting("nci-pin-store-field"))) {
              $this->outputpin = $this->module->getProjectSetting("nci-pin-store-field");
          }
@@ -246,6 +259,9 @@ class NCIConnectTokenAndPinGenService
             $this->module->log("Batch Job Total Batch :  " . count($chunk_data), ['batch_job_id' => $this->batch_job_id]);
         }
         foreach ($chunk_data as $data) {
+            unset($requestdata); 
+            $requestdata = array(); 
+            
             if(!$this->isDETCall()){
                 $this->module->setProjectSetting(self::CURR_BATCH, $this->curr_batch);
                 $this->module->setProjectSetting(self::TOTAL_NUM_RECORD_PROCESSED, $record_count);
@@ -292,6 +308,8 @@ class NCIConnectTokenAndPinGenService
                 break; // exit from continue processing becaus of force stop initiated
             }
 
+            sleep(10); // prevent multiple firing to API at a same time
+
         }
 
     }
@@ -318,6 +336,7 @@ class NCIConnectTokenAndPinGenService
             $newArray = array_change_key_case($eachItem, CASE_LOWER);
             $newArray[$this->outputtoken] = $newArray["token"]; // API Response from NCI
             $newArray[$this->outputpin] = $newArray["pin"]; // API Response from NCI
+            $newArray[$this->outputtokenurl] = $this->nci_connect_pwa_endpoint.$newArray["token"];
             if ($this->inputstudyid != "studyid") {
                 $newArray[$this->inputstudyid] = $newArray["studyid"];
                 unset($newArray["studyid"]);
@@ -357,6 +376,11 @@ class NCIConnectTokenAndPinGenService
                 "Content-Length: " . strlen($requestBody)
             ) ,
         ));
+
+        //temp testing the outbound request body
+        $this->module->log("the outbound request body: $requestBody", [
+            'batch_job_id' => $this->batch_job_id
+        ]);
 
         $response = curl_exec($curl);
         $err = curl_error($curl);
@@ -404,8 +428,37 @@ class NCIConnectTokenAndPinGenService
             //REDCap::logEvent(self::NCI_MODULE_LOG_NAME, "DATA ENTRY TRIGGER INITIATED", NULL,NULL,NULL, $project_id);
             $this->module->log("DATA ENTRY TRIGGER INITIATED");
             $this->is_DET = true;
+            //Added to handle passvie recurit who comes through self contact to HP. 
+            //HP will set campagin type - 398561594	88 = None of the above and 
+            $this->customHPForceSetCampaign($project_id, $record, $record_id_field);
             $this->startNewBatchJob();
         }
+    }
+
+    //Extended custom functionality for HP to force set campaign type  
+    private function customHPForceSetCampaign($project_id, $record, $record_id_field){
+        // for only the fields "studyId", "site_campaign_ty" and "sys_force_gen_tp"
+        if (isset($record) && !empty($record) && strlen($record) > 0 ) {
+            $tmpJSONData = REDCap::getData($project_id,'json', array($record), array($record_id_field, 'site_campaign_ty', 'sys_force_gen_tp'));
+            $tmpArrayData = json_decode($tmpJSONData, TRUE);
+            $this->module->log("customHPForceSetCampaign : " . $tmpJSONData);
+
+            if (isset ($tmpArrayData[0]["site_campaign_ty"]) && strlen($tmpArrayData[0]["site_campaign_ty"]) == 0
+                 && isset($tmpArrayData[0]["sys_force_gen_tp"]) && strlen($tmpArrayData[0]["sys_force_gen_tp"]) > 0 && $tmpArrayData[0]["sys_force_gen_tp"] == 1 
+                  && isset($tmpArrayData[0][$record_id_field]) && strlen($tmpArrayData[0][$record_id_field]) > 0){
+
+                $this->module->log("customHPForceSetCampaign : eligible to set campagn type and update type");
+
+                $tmpArrayData[0]["site_campaign_ty"]="398561594"; //398561594	None of the above
+                // This is not needed after the discussion with NCI for HP
+                //$tmpArrayData[0]["is_iv_update_rec_type"]="965707001"; //965707001	Active to Passive : Update recruit type
+                
+                // Import the data
+                $response = REDCap::saveData($project_id,'json', json_encode($tmpArrayData));
+            }
+        }
+       
+         
     }
 
 
