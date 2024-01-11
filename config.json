@@ -3,7 +3,7 @@
     "namespace": "HealthPartners\\Institute\\NCIConnectCohortLink",
     "description": "This external module facilitates the link between REDCap project and NCI Connect API system for token/pin generation for the participant(s) and also supports other functional data exchanges.",
     "documentation": "README.pdf",
-    "framework-version": 5,
+    "framework-version": 8,
     "authors": [
         {
             "name": "Vijayakumar Thirumalai",
@@ -32,6 +32,9 @@
             }
         ]
     },
+    "no-csrf-pages": [
+        "batchservice"
+    ],
     "no-auth-pages": [
         "apimanager"
     ],

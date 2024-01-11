@@ -286,7 +286,7 @@ class IHCSSendDeIdentifiedDataToNCIService
     {
         $requestbody = array();
         $responseDataArray = array();
-
+        //print_r($redcap_data);
         //split data set into batch size 
         $chunk_data = array_chunk($redcap_data, $this->batch_size, true);
 
@@ -409,7 +409,9 @@ class IHCSSendDeIdentifiedDataToNCIService
         
 
         foreach ($requestBody["data"] as $tmpRecord) {
+            //print_r($requestBody["data"]);
             $url = "";
+            $this->module->log("IV final verfication status logic starts" , ['batch_job_id' => $this->batch_job_id]);
             //$decision = $tmpRecord["final_iden_verifi_status"];
             $decision = $tmpRecord["821247024"];
             $decisionflag = "";
@@ -423,6 +425,7 @@ class IHCSSendDeIdentifiedDataToNCIService
                 $decisionflag = "duplicate";
             }
 
+	    $this->module->log("IV final verfication status logic starts :: $decision " , ['batch_job_id' => $this->batch_job_id]);            
 
             if (isset($decisionflag) && !empty($decisionflag)) {
                 $url = $this->iv_status_api_endpoint . "?type=" . $decisionflag . "&token=" . $tmpRecord["token"];
@@ -597,6 +600,8 @@ class IHCSSendDeIdentifiedDataToNCIService
     private function writeData($data, $recordStudyIdTokenMapArray)
     {
         //minimal data write array
+        
+        
         $recordlist = array();
         foreach ($data as $record) {
             $writeTempArray = array();

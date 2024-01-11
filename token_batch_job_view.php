@@ -1,7 +1,10 @@
 <?php
+// Set the namespace defined in your config file
+namespace HealthPartners\Institute\NCIConnectCohortLink;
+
 //This is used to check if already import process currenlty running
 $is_batch_locked = $module->isBatchJobLocked();
-$last_set_batch_log = $module->queryLogs("select log_id, timestamp, message, batch_job_id order by log_id desc limit 10000");
+$last_set_batch_log = $module->queryLogs("select log_id, timestamp, message, batch_job_id order by log_id desc limit 10000" ,[]);
 $curr_batch = 0;
 $total_num_batch=0;
 $total_num_record_processed=0;
@@ -38,7 +41,7 @@ if ($is_batch_locked===true) {
      <div id="batch-job-log-console">
           <?php
               while($row = $last_set_batch_log->fetch_assoc()){
-                  echo "<li style=\"list-style-type:none;\"> " . $row["log_id"] . " : " . $row["batch_job_id"] . " : " .  $row["timestamp"] . " : " .  $row["message"] . "</li>";
+                echo "<li style=\"list-style-type:none;\"> " . htmlspecialchars($row["log_id"], ENT_QUOTES) . " : " . htmlspecialchars($row["batch_job_id"], ENT_QUOTES) . " : " .  htmlspecialchars($row["timestamp"], ENT_QUOTES) . " : " .  htmlspecialchars($row["message"] , ENT_QUOTES) . "</li>";
               }
           ?>
      </div>

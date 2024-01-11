@@ -1,4 +1,7 @@
 <?php
+// Set the namespace defined in your config file
+namespace HealthPartners\Institute\NCIConnectCohortLink;
+
 ignore_user_abort(true);//Helps to Run the script after client abort 
 set_time_limit(1800); // Max of 30min batch script run to avoid unlimited run time settings 
 //Simple routing process to execute the function for service requested
